@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/brunoibarbosa/encurtador-go/internal/config"
-	"github.com/brunoibarbosa/encurtador-go/internal/http/handlers"
+	"github.com/brunoibarbosa/url-shortener/internal/config"
+	"github.com/brunoibarbosa/url-shortener/internal/http/handlers"
 )
 
 func main() {

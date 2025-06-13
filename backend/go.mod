@@ -1,4 +1,4 @@
-module github.com/brunoibarbosa/encurtador-go
+module github.com/brunoibarbosa/url-shortener
 
 go 1.24.2
 

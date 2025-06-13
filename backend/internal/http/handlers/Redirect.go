@@ -3,10 +3,10 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/brunoibarbosa/encurtador-go/internal/config"
-	"github.com/brunoibarbosa/encurtador-go/internal/http/response"
-	"github.com/brunoibarbosa/encurtador-go/internal/storage"
-	crypto "github.com/brunoibarbosa/encurtador-go/pkg/crypto"
+	"github.com/brunoibarbosa/url-shortener/internal/config"
+	"github.com/brunoibarbosa/url-shortener/internal/http/response"
+	"github.com/brunoibarbosa/url-shortener/internal/storage"
+	crypto "github.com/brunoibarbosa/url-shortener/pkg/crypto"
 )
 
 func RedirectHandler(w http.ResponseWriter, r *http.Request) {
