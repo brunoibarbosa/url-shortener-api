@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/brunoibarbosa/encurtador-go/internal/config"
+	"github.com/brunoibarbosa/encurtador-go/internal/http/response"
 	"github.com/brunoibarbosa/encurtador-go/internal/storage"
 	crypto "github.com/brunoibarbosa/encurtador-go/pkg/crypto"
 )
@@ -29,20 +30,20 @@ var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345
 func ShortenHandler(w http.ResponseWriter, r *http.Request) {
 	var payload ShortenRequest
 
-	err := json.NewDecoder(r.Body).Decode(&payload)
+	decodeErr := json.NewDecoder(r.Body).Decode(&payload)
 
-	if errors.Is(err, io.EOF) {
-		http.Error(w, "Request body must not be empty", http.StatusBadRequest)
+	if errors.Is(decodeErr, io.EOF) {
+		response.JSONError(w, http.StatusBadRequest, response.ErrorCode.InvalidRequest, "Request body must not be empty")
 		return
 	}
 
 	if payload.URL == "" {
-		http.Error(w, "'url' field is required in the request body", http.StatusBadRequest)
+		response.JSONError(w, http.StatusBadRequest, response.ErrorCode.InvalidRequest, "'url' field is required in the request body")
 		return
 	}
 
 	if !(strings.HasPrefix(payload.URL, "https://") || strings.HasPrefix(payload.URL, "http://")) {
-		http.Error(w, "The 'url' field must start with https:// or http://.", http.StatusBadRequest)
+		response.JSONError(w, http.StatusBadRequest, response.ErrorCode.InvalidRequest, "The 'url' field must start with https:// or http://")
 		return
 	}
 
