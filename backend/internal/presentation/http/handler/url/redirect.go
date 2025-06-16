@@ -5,6 +5,7 @@ import (
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
 	handler "github.com/brunoibarbosa/url-shortener/internal/presentation/http"
+	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -22,8 +23,7 @@ func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	appQuery := command.GetOriginalURLQuery{ShortCode: shortCode}
 	originalURL, err := h.useCase.Handle(appQuery)
 	if err != nil || originalURL == "" {
-		handler.WriteJSONError(w, http.StatusBadRequest, handler.ErrorCode.NotFound, "The requested URL was not found")
-		return
+		panic(handler.NewHTTPError(http.StatusNotFound, errors.CodeNotFound, "The requested URL was not found"))
 	}
 
 	http.Redirect(w, r, originalURL, http.StatusFound)

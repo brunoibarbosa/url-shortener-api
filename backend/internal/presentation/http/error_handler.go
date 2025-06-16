@@ -5,23 +5,31 @@ import (
 	"net/http"
 )
 
-type ErrorCodeStruct struct {
-	InvalidRequest string
-	NotFound       string
-}
-
-var ErrorCode = ErrorCodeStruct{
-	InvalidRequest: "INVALID_REQUEST",
-	NotFound:       "NOT_FOUND",
-}
-
 type ErrorDetail struct {
-	Message string `json:"message"`
 	Code    string `json:"code"`
+	Message string `json:"message"`
 }
 
 type ErrorResponse struct {
 	Error ErrorDetail `json:"error"`
+}
+
+type HTTPError struct {
+	Status  int
+	Code    string
+	Message string
+}
+
+func (e *HTTPError) Error() string {
+	return e.Message
+}
+
+func NewHTTPError(status int, code, message string) *HTTPError {
+	return &HTTPError{
+		Status:  status,
+		Code:    code,
+		Message: message,
+	}
 }
 
 func WriteJSONError(w http.ResponseWriter, status int, code string, message string) {

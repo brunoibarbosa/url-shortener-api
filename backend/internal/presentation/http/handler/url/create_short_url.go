@@ -2,13 +2,14 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
+	err "errors"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
 	handler "github.com/brunoibarbosa/url-shortener/internal/presentation/http"
+	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 )
 
 type CreateShortURLPayload struct {
@@ -33,26 +34,22 @@ func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Reques
 	var payload CreateShortURLPayload
 	decodeErr := json.NewDecoder(r.Body).Decode(&payload)
 
-	if errors.Is(decodeErr, io.EOF) {
-		handler.WriteJSONError(w, http.StatusBadRequest, handler.ErrorCode.InvalidRequest, "Request body must not be empty")
-		return
+	if err.Is(decodeErr, io.EOF) {
+		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeBadRequest, "Request body must not be empty"))
 	}
 
 	if payload.URL == "" {
-		handler.WriteJSONError(w, http.StatusBadRequest, handler.ErrorCode.InvalidRequest, "'url' field is required in the request body")
-		return
+		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeValidationError, "'url' field is required in the request body"))
 	}
 
 	if !(strings.HasPrefix(payload.URL, "https://") || strings.HasPrefix(payload.URL, "http://")) {
-		handler.WriteJSONError(w, http.StatusBadRequest, handler.ErrorCode.InvalidRequest, "The 'url' field must start with https:// or http://")
-		return
+		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeValidationError, "The 'url' field must start with https:// or http://"))
 	}
 
 	appCmd := command.CreateShortURLCommand{OriginalURL: payload.URL}
 	shortCode, err := h.useCase.Handle(appCmd)
 	if err != nil {
-		handler.WriteJSONError(w, http.StatusBadRequest, handler.ErrorCode.InvalidRequest, "Failed to create short URL")
-		return
+		panic(handler.NewHTTPError(http.StatusInternalServerError, errors.CodeInternalError, "Failed to create short URL"))
 	}
 
 	response := CreateShortURL201Response{
@@ -61,5 +58,7 @@ func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		panic(handler.NewHTTPError(http.StatusInternalServerError, errors.CodeInternalError, "Failed to encode response"))
+	}
 }
