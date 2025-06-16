@@ -8,13 +8,13 @@ import (
 	"log"
 )
 
-func Encrypt(originalUrl string, secretKey string) string {
+func Encrypt(original string, secretKey string) string {
 	block, err := aes.NewCipher([]byte(secretKey))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	plainText := []byte(originalUrl)
+	plainText := []byte(original)
 	cipherText := make([]byte, aes.BlockSize+len(plainText))
 
 	iv := cipherText[:aes.BlockSize]
@@ -29,13 +29,13 @@ func Encrypt(originalUrl string, secretKey string) string {
 	return hex.EncodeToString(cipherText)
 }
 
-func Decrypt(encryptedUrl string, secretKey string) string {
+func Decrypt(encrypted string, secretKey string) string {
 	block, err := aes.NewCipher([]byte(secretKey))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	cipherText, err := hex.DecodeString(encryptedUrl)
+	cipherText, err := hex.DecodeString(encrypted)
 	if err != nil {
 		log.Fatal(err)
 	}
