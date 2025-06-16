@@ -1,9 +1,6 @@
 package main
 
 import (
-	"log"
-	"net/http"
-
 	"github.com/brunoibarbosa/url-shortener/internal/config"
 	http_router "github.com/brunoibarbosa/url-shortener/internal/infra/presentation/http"
 )
@@ -13,6 +10,5 @@ func main() {
 
 	r := http_router.NewRouter(cfg)
 
-	log.Println("Server running on :8080")
-	http.ListenAndServe(":8080", r)
+	listenAndServe(r, cfg)
 }

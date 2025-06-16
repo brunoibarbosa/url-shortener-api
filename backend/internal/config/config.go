@@ -9,10 +9,13 @@ import (
 )
 
 type Environment struct {
-	SecretKey     string
+	SecretKey string
+
 	RedisAddress  string
 	RedisPassword string
 	RedisDB       int
+
+	ListenAddress string
 }
 
 type AppConfig struct {
@@ -26,10 +29,13 @@ func Load() AppConfig {
 
 	return AppConfig{
 		Env: Environment{
-			SecretKey:     mustEnv("SECRET_KEY"),
+			SecretKey: mustEnv("SECRET_KEY"),
+
 			RedisAddress:  mustEnv("REDIS_ADDRESS"),
 			RedisPassword: getEnvWithDefault("REDIS_PASSWORD", ""),
 			RedisDB:       getEnvAsInt("REDIS_DB", 0),
+
+			ListenAddress: mustEnv("LISTEN_ADDRESS"),
 		},
 	}
 }
