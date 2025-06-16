@@ -21,12 +21,12 @@ type CreateShortURL201Response struct {
 }
 
 type CreateShortURLHTTPHandler struct {
-	useCase *command.CreateShortURLHandler
+	cmd *command.CreateShortURLHandler
 }
 
-func NewCreateShortURLHTTPHandler(useCase *command.CreateShortURLHandler) *CreateShortURLHTTPHandler {
+func NewCreateShortURLHTTPHandler(cmd *command.CreateShortURLHandler) *CreateShortURLHTTPHandler {
 	return &CreateShortURLHTTPHandler{
-		useCase: useCase,
+		cmd: cmd,
 	}
 }
 
@@ -47,7 +47,7 @@ func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Reques
 	}
 
 	appCmd := command.CreateShortURLCommand{OriginalURL: payload.URL}
-	shortCode, err := h.useCase.Handle(appCmd)
+	shortCode, err := h.cmd.Handle(appCmd)
 	if err != nil {
 		panic(handler.NewHTTPError(http.StatusInternalServerError, errors.CodeInternalError, "Failed to create short URL"))
 	}

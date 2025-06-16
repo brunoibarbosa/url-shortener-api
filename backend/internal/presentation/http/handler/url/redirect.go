@@ -10,18 +10,18 @@ import (
 )
 
 type RedirectHTTPHandler struct {
-	useCase *command.GetOriginalURLHandler
+	cmd *command.GetOriginalURLHandler
 }
 
-func NewRedirectHTTPHandler(useCase *command.GetOriginalURLHandler) *RedirectHTTPHandler {
-	return &RedirectHTTPHandler{useCase: useCase}
+func NewRedirectHTTPHandler(cmd *command.GetOriginalURLHandler) *RedirectHTTPHandler {
+	return &RedirectHTTPHandler{cmd: cmd}
 }
 
 func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	shortCode := chi.URLParam(r, "shortCode")
 
 	appQuery := command.GetOriginalURLQuery{ShortCode: shortCode}
-	originalURL, err := h.useCase.Handle(appQuery)
+	originalURL, err := h.cmd.Handle(appQuery)
 	if err != nil || originalURL == "" {
 		panic(handler.NewHTTPError(http.StatusNotFound, errors.CodeNotFound, "The requested URL was not found"))
 	}
