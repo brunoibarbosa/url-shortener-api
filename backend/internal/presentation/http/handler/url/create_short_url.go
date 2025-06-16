@@ -31,20 +31,7 @@ func NewCreateShortURLHTTPHandler(cmd *command.CreateShortURLHandler) *CreateSho
 }
 
 func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) {
-	var payload CreateShortURLPayload
-	decodeErr := json.NewDecoder(r.Body).Decode(&payload)
-
-	if err.Is(decodeErr, io.EOF) {
-		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeBadRequest, "Request body must not be empty"))
-	}
-
-	if payload.URL == "" {
-		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeValidationError, "'url' field is required in the request body"))
-	}
-
-	if !(strings.HasPrefix(payload.URL, "https://") || strings.HasPrefix(payload.URL, "http://")) {
-		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeValidationError, "The 'url' field must start with https:// or http://"))
-	}
+	payload := parseAndValidatePayload(r)
 
 	appCmd := command.CreateShortURLCommand{OriginalURL: payload.URL}
 	shortCode, err := h.cmd.Handle(appCmd)
@@ -61,4 +48,23 @@ func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Reques
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		panic(handler.NewHTTPError(http.StatusInternalServerError, errors.CodeInternalError, "Failed to encode response"))
 	}
+}
+
+func parseAndValidatePayload(r *http.Request) CreateShortURLPayload {
+	var payload CreateShortURLPayload
+	decodeErr := json.NewDecoder(r.Body).Decode(&payload)
+
+	if err.Is(decodeErr, io.EOF) {
+		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeBadRequest, "Request body must not be empty"))
+	}
+
+	if payload.URL == "" {
+		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeValidationError, "'url' field is required in the request body"))
+	}
+
+	if !(strings.HasPrefix(payload.URL, "https://") || strings.HasPrefix(payload.URL, "http://")) {
+		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeValidationError, "The 'url' field must start with https:// or http://"))
+	}
+
+	return payload
 }
