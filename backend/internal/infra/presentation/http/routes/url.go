@@ -13,7 +13,7 @@ func SetupURLRoutes(r chi.Router, appConfig config.AppConfig) {
 	redisClient := redis.GetRedisClient(appConfig)
 	repo := redis_repo.NewURLRepository(redisClient)
 
-	createHandler := command.NewCreateShortURLHandler(repo, appConfig.Env.SecretKey)
+	createHandler := command.NewCreateShortURLHandler(repo, appConfig.Env.SecretKey, appConfig.Env.ExpireDuration)
 	getHandler := command.NewGetOriginalURLHandler(repo, appConfig.Env.SecretKey)
 
 	createHTTPHandler := handler.NewCreateShortURLHTTPHandler(createHandler)

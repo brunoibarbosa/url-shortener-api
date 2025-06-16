@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -14,6 +15,8 @@ type Environment struct {
 	RedisAddress  string
 	RedisPassword string
 	RedisDB       int
+
+	ExpireDuration time.Duration
 
 	ListenAddress string
 }
@@ -35,13 +38,20 @@ func Load() AppConfig {
 			RedisPassword: getEnvWithDefault("REDIS_PASSWORD", ""),
 			RedisDB:       getEnvAsInt("REDIS_DB", 0),
 
+			ExpireDuration: mustEnvAsDuration("EXPIRE_DURATION"),
+
 			ListenAddress: mustEnv("LISTEN_ADDRESS"),
 		},
 	}
 }
 
-func mustEnv(key string) string {
+func getEnv(key string) string {
 	val := os.Getenv(key)
+	return val
+}
+
+func mustEnv(key string) string {
+	val := getEnv(key)
 	if val == "" {
 		log.Fatalf("Required environment variable %s not set", key)
 	}
@@ -49,7 +59,7 @@ func mustEnv(key string) string {
 }
 
 func getEnvWithDefault(key, defaultVal string) string {
-	val := os.Getenv(key)
+	val := getEnv(key)
 	if val == "" {
 		return defaultVal
 	}
@@ -57,13 +67,21 @@ func getEnvWithDefault(key, defaultVal string) string {
 }
 
 func getEnvAsInt(key string, defaultValue int) int {
-	valStr := os.Getenv(key)
-	if valStr == "" {
-		return defaultValue
-	}
+	valStr := getEnvWithDefault(key, strconv.Itoa(defaultValue))
 	val, err := strconv.Atoi(valStr)
 	if err != nil {
 		log.Fatalf("Invalid value for %s: expected integer, got %s", key, valStr)
 	}
 	return val
+}
+
+func mustEnvAsDuration(key string) time.Duration {
+	valStr := mustEnv(key)
+
+	valDuration, err := time.ParseDuration(valStr)
+	if err != nil {
+		log.Fatalf("Invalid value for %s: expected time.Duration, got %s", key, valStr)
+	}
+
+	return valDuration
 }

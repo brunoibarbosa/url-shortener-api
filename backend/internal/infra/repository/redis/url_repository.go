@@ -18,8 +18,8 @@ func NewURLRepository(client *redis.Client) *URLRepository {
 	}
 }
 
-func (r *URLRepository) Save(url *url.URL) error {
-	return r.client.Set(context.Background(), url.ShortCode, url.EncryptedURL, time.Hour).Err()
+func (r *URLRepository) Save(url *url.URL, expires time.Duration) error {
+	return r.client.Set(context.Background(), url.ShortCode, url.EncryptedURL, expires).Err()
 }
 
 func (r *URLRepository) FindByShortCode(shortCode string) (*url.URL, error) {
