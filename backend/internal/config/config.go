@@ -11,15 +11,19 @@ type Environment struct {
 	SecretKey string
 }
 
-var Env *Environment
+type AppConfig struct {
+	Env Environment
+}
 
-func LoadConfig() {
+func Load() AppConfig {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal(err)
 	}
 
-	Env = &Environment{
-		SecretKey: mustEnv("SECRET_KEY"),
+	return AppConfig{
+		Env: Environment{
+			SecretKey: mustEnv("SECRET_KEY"),
+		},
 	}
 }
 
