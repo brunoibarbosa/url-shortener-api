@@ -1,4 +1,4 @@
-package domain
+package url
 
 type URLRepository interface {
 	Save(url *URL) error

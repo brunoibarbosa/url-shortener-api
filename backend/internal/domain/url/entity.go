@@ -1,4 +1,4 @@
-package domain
+package url
 
 type URL struct {
 	ShortCode    string

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
+	"github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -18,11 +18,11 @@ func NewURLRepository(client *redis.Client) *URLRepository {
 	}
 }
 
-func (r *URLRepository) Save(url *domain.URL) error {
+func (r *URLRepository) Save(url *url.URL) error {
 	return r.client.Set(context.Background(), url.ShortCode, url.EncryptedURL, time.Hour).Err()
 }
 
-func (r *URLRepository) FindByShortCode(shortCode string) (*domain.URL, error) {
+func (r *URLRepository) FindByShortCode(shortCode string) (*url.URL, error) {
 	encryptedUrl, err := r.client.Get(context.Background(), shortCode).Result()
 
 	if err != nil {
@@ -32,7 +32,7 @@ func (r *URLRepository) FindByShortCode(shortCode string) (*domain.URL, error) {
 		return nil, err
 	}
 
-	return &domain.URL{
+	return &url.URL{
 		ShortCode:    shortCode,
 		EncryptedURL: encryptedUrl,
 	}, nil

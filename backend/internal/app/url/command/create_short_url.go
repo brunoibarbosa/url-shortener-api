@@ -1,7 +1,7 @@
 package command
 
 import (
-	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
+	"github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
 )
 
@@ -10,11 +10,11 @@ type CreateShortURLCommand struct {
 }
 
 type CreateShortURLHandler struct {
-	repo      domain.URLRepository
+	repo      url.URLRepository
 	secretKey string
 }
 
-func NewCreateShortURLHandler(repo domain.URLRepository, secretKey string) *CreateShortURLHandler {
+func NewCreateShortURLHandler(repo url.URLRepository, secretKey string) *CreateShortURLHandler {
 	return &CreateShortURLHandler{
 		repo:      repo,
 		secretKey: secretKey,
@@ -22,10 +22,10 @@ func NewCreateShortURLHandler(repo domain.URLRepository, secretKey string) *Crea
 }
 
 func (h *CreateShortURLHandler) Handle(cmd CreateShortURLCommand) (string, error) {
-	shortCode := domain.GenerateShortCode()
+	shortCode := url.GenerateShortCode()
 
 	encryptedUrl := crypto.Encrypt(cmd.OriginalURL, h.secretKey)
-	url := &domain.URL{
+	url := &url.URL{
 		ShortCode:    shortCode,
 		EncryptedURL: encryptedUrl,
 	}

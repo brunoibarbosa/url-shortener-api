@@ -3,7 +3,7 @@ package command
 import (
 	"errors"
 
-	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
+	"github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
 )
 
@@ -12,11 +12,11 @@ type GetOriginalURLQuery struct {
 }
 
 type GetOriginalURLHandler struct {
-	repo      domain.URLRepository
+	repo      url.URLRepository
 	secretKey string
 }
 
-func NewGetOriginalURLHandler(repo domain.URLRepository, secretKey string) *GetOriginalURLHandler {
+func NewGetOriginalURLHandler(repo url.URLRepository, secretKey string) *GetOriginalURLHandler {
 	return &GetOriginalURLHandler{
 		repo:      repo,
 		secretKey: secretKey,
