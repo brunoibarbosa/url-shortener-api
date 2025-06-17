@@ -23,7 +23,7 @@ func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	appQuery := command.GetOriginalURLQuery{ShortCode: shortCode}
 	originalURL, err := h.cmd.Handle(appQuery)
 	if err != nil || originalURL == "" {
-		panic(handler.NewHTTPError(http.StatusNotFound, errors.CodeNotFound, "The requested URL was not found"))
+		panic(handler.NewHTTPError(http.StatusNotFound, errors.CodeNotFound, "the requested URL was not found"))
 	}
 
 	http.Redirect(w, r, originalURL, http.StatusFound)

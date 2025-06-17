@@ -5,11 +5,11 @@ import (
 	err "errors"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
 	handler "github.com/brunoibarbosa/url-shortener/internal/presentation/http"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
+	"github.com/brunoibarbosa/url-shortener/pkg/validation"
 )
 
 type CreateShortURLPayload struct {
@@ -46,7 +46,7 @@ func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		panic(handler.NewHTTPError(http.StatusInternalServerError, errors.CodeInternalError, "Failed to encode response"))
+		panic(handler.NewHTTPError(http.StatusInternalServerError, errors.CodeInternalError, "failed to encode response"))
 	}
 }
 
@@ -55,15 +55,15 @@ func parseAndValidatePayload(r *http.Request) CreateShortURLPayload {
 	decodeErr := json.NewDecoder(r.Body).Decode(&payload)
 
 	if err.Is(decodeErr, io.EOF) {
-		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeBadRequest, "Request body must not be empty"))
+		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeBadRequest, "request body must not be empty"))
 	}
 
 	if payload.URL == "" {
 		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeValidationError, "'url' field is required in the request body"))
 	}
 
-	if !(strings.HasPrefix(payload.URL, "https://") || strings.HasPrefix(payload.URL, "http://")) {
-		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeValidationError, "The 'url' field must start with https:// or http://"))
+	if err := validation.ValidateURL(payload.URL); err != nil {
+		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeValidationError, err.Error()))
 	}
 
 	return payload
