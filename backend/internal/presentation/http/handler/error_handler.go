@@ -66,3 +66,12 @@ func WriteJSONError(w http.ResponseWriter, status int, code string, message stri
 		},
 	})
 }
+
+func RequestValidator(h HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_, err := h(w, r)
+		if err != nil {
+			WriteJSONError(w, err.Status, err.Code, err.Message)
+		}
+	}
+}

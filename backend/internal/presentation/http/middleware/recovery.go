@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	handler "github.com/brunoibarbosa/url-shortener/internal/presentation/http"
+	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 )
 
@@ -14,8 +14,6 @@ func RecoverMiddleware(next http.Handler) http.Handler {
 			if rec := recover(); rec != nil {
 				ctx := r.Context()
 				switch err := rec.(type) {
-				case *handler.HTTPError:
-					handler.WriteJSONError(w, err.Status, err.Code, err.Message)
 				case error:
 					log.Printf("Unexpected error: %v", err)
 					handler.WriteI18nJSONError(ctx, w, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)

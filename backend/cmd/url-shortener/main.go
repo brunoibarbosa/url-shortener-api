@@ -5,7 +5,6 @@ import (
 
 	"github.com/brunoibarbosa/url-shortener/internal/config"
 	"github.com/brunoibarbosa/url-shortener/internal/i18n"
-	http_router "github.com/brunoibarbosa/url-shortener/internal/infra/presentation/http"
 )
 
 func main() {
@@ -15,7 +14,6 @@ func main() {
 		log.Fatalf("failed to initialize i18n: %v", err)
 	}
 
-	r := http_router.NewRouter(cfg)
-
+	r := getRouter(cfg)
 	listenAndServe(r, cfg)
 }

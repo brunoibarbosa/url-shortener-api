@@ -4,12 +4,12 @@ import (
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
 	"github.com/brunoibarbosa/url-shortener/internal/config"
 	redis "github.com/brunoibarbosa/url-shortener/internal/infra/database"
+	http_router "github.com/brunoibarbosa/url-shortener/internal/infra/presentation/http"
 	redis_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/redis"
 	handler "github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler/url"
-	"github.com/go-chi/chi/v5"
 )
 
-func SetupURLRoutes(r chi.Router, appConfig config.AppConfig) {
+func SetupURLRoutes(r *http_router.AppRouter, appConfig config.AppConfig) {
 	redisClient := redis.GetRedisClient(appConfig)
 	repo := redis_repo.NewURLRepository(redisClient)
 

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
-	handler "github.com/brunoibarbosa/url-shortener/internal/presentation/http"
+	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 	"github.com/go-chi/chi/v5"
 )
@@ -17,15 +17,16 @@ func NewRedirectHTTPHandler(cmd *command.GetOriginalURLHandler) *RedirectHTTPHan
 	return &RedirectHTTPHandler{cmd: cmd}
 }
 
-func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) {
+func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
 	shortCode := chi.URLParam(r, "shortCode")
 
 	appQuery := command.GetOriginalURLQuery{ShortCode: shortCode}
 	originalURL, err := h.cmd.Handle(appQuery)
 	ctx := r.Context()
 	if err != nil || originalURL == "" {
-		panic(handler.NewI18nHTTPError(ctx, http.StatusNotFound, errors.CodeNotFound, "error.common.not_found", nil))
+		return nil, handler.NewI18nHTTPError(ctx, http.StatusNotFound, errors.CodeNotFound, "error.common.not_found", nil)
 	}
 
 	http.Redirect(w, r, originalURL, http.StatusFound)
+	return nil, nil
 }

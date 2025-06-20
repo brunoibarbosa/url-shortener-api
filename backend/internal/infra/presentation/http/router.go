@@ -2,17 +2,33 @@ package http
 
 import (
 	"github.com/brunoibarbosa/url-shortener/internal/config"
-	routes "github.com/brunoibarbosa/url-shortener/internal/infra/presentation/http/routes"
-	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/middleware"
+	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
 	"github.com/go-chi/chi/v5"
 )
 
-func NewRouter(appConfig config.AppConfig) *chi.Mux {
-	r := chi.NewRouter()
+type AppRouter struct {
+	*chi.Mux
+}
 
-	r.Use(middleware.LocaleMiddleware)
-	r.Use(middleware.RecoverMiddleware)
-	routes.SetupURLRoutes(r, appConfig)
+func NewRouter(appConfig config.AppConfig) *AppRouter {
+	cr := chi.NewRouter()
+	return &AppRouter{
+		Mux: cr,
+	}
+}
 
-	return r
+func (r *AppRouter) Post(pattern string, handlerCb handler.HandlerFunc) {
+	r.Mux.Post(pattern, handler.RequestValidator(handlerCb))
+}
+
+func (r *AppRouter) Get(pattern string, handlerCb handler.HandlerFunc) {
+	r.Mux.Get(pattern, handler.RequestValidator(handlerCb))
+}
+
+func (r *AppRouter) Put(pattern string, handlerCb handler.HandlerFunc) {
+	r.Mux.Put(pattern, handler.RequestValidator(handlerCb))
+}
+
+func (r *AppRouter) Delete(pattern string, handlerCb handler.HandlerFunc) {
+	r.Mux.Delete(pattern, handler.RequestValidator(handlerCb))
 }

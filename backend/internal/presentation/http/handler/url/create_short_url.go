@@ -9,7 +9,7 @@ import (
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
 	"github.com/brunoibarbosa/url-shortener/internal/domain/url"
-	handler "github.com/brunoibarbosa/url-shortener/internal/presentation/http"
+	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
 	"github.com/brunoibarbosa/url-shortener/internal/validation"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 )
@@ -32,14 +32,18 @@ func NewCreateShortURLHTTPHandler(cmd *command.CreateShortURLHandler) *CreateSho
 	}
 }
 
-func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) {
+func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
 	ctx := r.Context()
-	payload := parseAndValidatePayload(r, ctx)
+
+	payload, err := parseAndValidatePayload(r, ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	appCmd := command.CreateShortURLCommand{OriginalURL: payload.URL}
 	shortCode, handleErr := h.cmd.Handle(appCmd)
 	if handleErr != nil {
-		panic(handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.url.create_failed", nil))
+		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.url.create_failed", nil)
 	}
 
 	response := CreateShortURL201Response{
@@ -49,20 +53,22 @@ func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
 	if encodeErr := json.NewEncoder(w).Encode(response); encodeErr != nil {
-		panic(handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil))
+		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
 	}
+
+	return nil, nil
 }
 
-func parseAndValidatePayload(r *http.Request, ctx context.Context) CreateShortURLPayload {
+func parseAndValidatePayload(r *http.Request, ctx context.Context) (CreateShortURLPayload, *handler.HTTPError) {
 	var payload CreateShortURLPayload
 	decodeErr := json.NewDecoder(r.Body).Decode(&payload)
 
 	if err.Is(decodeErr, io.EOF) {
-		panic(handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.empty_body", nil))
+		return CreateShortURLPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.empty_body", nil)
 	}
 
 	if payload.URL == "" {
-		panic(handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.url.url_required", nil))
+		return CreateShortURLPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.url.url_required", nil)
 	}
 
 	if validationErr := validation.ValidateURL(payload.URL); validationErr != nil {
@@ -79,8 +85,8 @@ func parseAndValidatePayload(r *http.Request, ctx context.Context) CreateShortUR
 			errorCode = "error.url.invalid_url"
 		}
 
-		panic(handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, errorCode, nil))
+		return CreateShortURLPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, errorCode, nil)
 	}
 
-	return payload
+	return payload, nil
 }
