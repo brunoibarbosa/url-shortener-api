@@ -1,0 +1,14 @@
+{
+  "error.server.internal": "Internal server error",
+
+  "error.common.not_found": "No results found",
+  "error.common.empty_body": "Request body must not be empty",
+  "error.common.encode_failed": "Failed to encode response",
+
+  "error.url.url_required": "'url' field is required in the request body",
+  "error.url.create_failed": "Failed to create short URL",
+  "error.url.missing_schema": "URL is missing scheme (e.g., http or https)",
+  "error.url.unsupported_schema": "Unsupported scheme",
+  "error.url.missing_host": "URL is missing host",
+  "error.url.invalid_url": "Invalid URL"
+}

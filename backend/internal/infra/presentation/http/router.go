@@ -10,6 +10,7 @@ import (
 func NewRouter(appConfig config.AppConfig) *chi.Mux {
 	r := chi.NewRouter()
 
+	r.Use(middleware.LocaleMiddleware)
 	r.Use(middleware.RecoverMiddleware)
 	routes.SetupURLRoutes(r, appConfig)
 

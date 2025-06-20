@@ -1,11 +1,11 @@
 package validation
 
 import (
-	"errors"
-	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
+
+	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
 )
 
 var allowedSchemes = map[string]bool{
@@ -19,28 +19,28 @@ func ValidateURL(rawURL string) error {
 	parsedURL, err := url.Parse(rawURL)
 
 	if err != nil {
-		return fmt.Errorf("invalid url: %v", err)
+		return domain.ErrInvalidURLFormat
 	}
 
 	if parsedURL.Scheme == "" {
-		return errors.New("url is missing scheme (e.g., http or https)")
+		return domain.ErrMissingURLSchema
 	}
 
 	if !allowedSchemes[strings.ToLower(parsedURL.Scheme)] {
-		return fmt.Errorf("unsupported scheme: %s", parsedURL.Scheme)
+		return domain.ErrUnsupportedURLSchema
 	}
 
 	if parsedURL.Host == "" {
-		return errors.New("url is missing host")
+		return domain.ErrMissingURLHost
 	}
 
 	host := parsedURL.Hostname()
 	if invalidCharRegex.MatchString(host) {
-		return fmt.Errorf("host contains invalid characters: %s", host)
+		return domain.ErrInvalidURLFormat
 	}
 
 	if strings.ContainsAny(rawURL, " \t\n\r") {
-		return errors.New("url contains spaces or control characters")
+		return domain.ErrInvalidURLFormat
 	}
 
 	return nil

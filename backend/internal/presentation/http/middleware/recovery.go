@@ -12,15 +12,16 @@ func RecoverMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
+				ctx := r.Context()
 				switch err := rec.(type) {
 				case *handler.HTTPError:
 					handler.WriteJSONError(w, err.Status, err.Code, err.Message)
 				case error:
 					log.Printf("Unexpected error: %v", err)
-					handler.WriteJSONError(w, http.StatusInternalServerError, errors.CodeInternalError, "Internal server error")
+					handler.WriteI18nJSONError(ctx, w, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)
 				default:
 					log.Printf("Unknown panic: %v", rec)
-					handler.WriteJSONError(w, http.StatusInternalServerError, errors.CodeInternalError, "Internal server error")
+					handler.WriteI18nJSONError(ctx, w, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)
 				}
 			}
 		}()

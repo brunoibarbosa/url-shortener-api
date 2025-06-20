@@ -1,15 +1,17 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	err "errors"
 	"io"
 	"net/http"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
+	"github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	handler "github.com/brunoibarbosa/url-shortener/internal/presentation/http"
+	"github.com/brunoibarbosa/url-shortener/internal/validation"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
-	"github.com/brunoibarbosa/url-shortener/pkg/validation"
 )
 
 type CreateShortURLPayload struct {
@@ -31,12 +33,13 @@ func NewCreateShortURLHTTPHandler(cmd *command.CreateShortURLHandler) *CreateSho
 }
 
 func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) {
-	payload := parseAndValidatePayload(r)
+	ctx := r.Context()
+	payload := parseAndValidatePayload(r, ctx)
 
 	appCmd := command.CreateShortURLCommand{OriginalURL: payload.URL}
-	shortCode, err := h.cmd.Handle(appCmd)
-	if err != nil {
-		panic(handler.NewHTTPError(http.StatusInternalServerError, errors.CodeInternalError, "Failed to create short URL"))
+	shortCode, handleErr := h.cmd.Handle(appCmd)
+	if handleErr != nil {
+		panic(handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.url.create_failed", nil))
 	}
 
 	response := CreateShortURL201Response{
@@ -45,25 +48,38 @@ func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		panic(handler.NewHTTPError(http.StatusInternalServerError, errors.CodeInternalError, "failed to encode response"))
+	if encodeErr := json.NewEncoder(w).Encode(response); encodeErr != nil {
+		panic(handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil))
 	}
 }
 
-func parseAndValidatePayload(r *http.Request) CreateShortURLPayload {
+func parseAndValidatePayload(r *http.Request, ctx context.Context) CreateShortURLPayload {
 	var payload CreateShortURLPayload
 	decodeErr := json.NewDecoder(r.Body).Decode(&payload)
 
 	if err.Is(decodeErr, io.EOF) {
-		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeBadRequest, "request body must not be empty"))
+		panic(handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.empty_body", nil))
 	}
 
 	if payload.URL == "" {
-		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeValidationError, "'url' field is required in the request body"))
+		panic(handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.url.url_required", nil))
 	}
 
-	if err := validation.ValidateURL(payload.URL); err != nil {
-		panic(handler.NewHTTPError(http.StatusBadRequest, errors.CodeValidationError, err.Error()))
+	if validationErr := validation.ValidateURL(payload.URL); validationErr != nil {
+		var errorCode string
+
+		switch {
+		case err.Is(validationErr, url.ErrMissingURLSchema):
+			errorCode = "error.url.missing_schema"
+		case err.Is(validationErr, url.ErrUnsupportedURLSchema):
+			errorCode = "error.url.unsupported_schema"
+		case err.Is(validationErr, url.ErrMissingURLHost):
+			errorCode = "error.url.missing_host"
+		default:
+			errorCode = "error.url.invalid_url"
+		}
+
+		panic(handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, errorCode, nil))
 	}
 
 	return payload
