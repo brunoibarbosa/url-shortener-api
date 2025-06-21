@@ -5,11 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Backend",
+            "name": "Launch",
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/backend/cmd/url-shortener/.",
+            "program": "${workspaceFolder}/cmd/url-shortener/.",
         }
     ]
 }
