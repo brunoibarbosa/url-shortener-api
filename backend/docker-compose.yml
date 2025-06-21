@@ -1,0 +1,14 @@
+services:
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+  url-shortener-api:
+    build: .
+    image: url-shortener-api:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./cmd/url-shortener/.env:/app/.env
+    depends_on:
+      - redis
