@@ -41,6 +41,7 @@ func (r *URLCacheRepository) FindByShortCode(ctx context.Context, shortCode stri
 	return &url.URL{
 		ShortCode:    shortCode,
 		EncryptedURL: encryptedUrl,
+		ExpiresAt:    nil,
 	}, nil
 }
 

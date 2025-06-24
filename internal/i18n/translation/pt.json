@@ -10,5 +10,6 @@
   "error.url.missing_schema": "A URL está sem o esquema (por exemplo, http ou https)",
   "error.url.unsupported_schema": "Esquema não suportado",
   "error.url.missing_host": "A URL está sem o host",
-  "error.url.invalid_url": "URL inválida"
+  "error.url.invalid_url": "URL inválida",
+  "error.url.expired_url": "A URL expirou"
 }

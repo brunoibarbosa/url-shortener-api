@@ -25,7 +25,7 @@ func (r *URLRepository) Exists(ctx context.Context, shortCode string) (bool, err
 }
 
 func (r *URLRepository) Save(ctx context.Context, u *url.URL) error {
-	_, err := r.db.Pool.Exec(ctx, "INSERT INTO urls (short_code, encrypted_url, expires_at) VALUES ($1, $2, $3)", u.ShortCode, u.EncryptedURL, time.Now().Add(24*time.Hour))
+	_, err := r.db.Pool.Exec(ctx, "INSERT INTO urls (short_code, encrypted_url, expires_at) VALUES ($1, $2, $3)", u.ShortCode, u.EncryptedURL, u.ExpiresAt.UTC())
 	return err
 }
 
@@ -33,12 +33,29 @@ func (r *URLRepository) FindByShortCode(ctx context.Context, shortCode string) (
 	u := url.URL{
 		ShortCode:    shortCode,
 		EncryptedURL: "",
+		ExpiresAt:    nil,
 	}
-	err := r.db.Pool.QueryRow(ctx, "SELECT encrypted_url FROM urls WHERE short_code = $1 LIMIT 1", shortCode).Scan(&u.EncryptedURL)
+	err := r.db.Pool.QueryRow(ctx, "SELECT encrypted_url, expires_at FROM urls WHERE short_code = $1 LIMIT 1", shortCode).Scan(&u.EncryptedURL, &u.ExpiresAt)
 
 	if err != nil {
 		return nil, err
 	}
 
+	if u.ExpiresAt != nil && time.Now().UTC().After(u.ExpiresAt.UTC()) {
+		err := url.ErrExpiredURL
+		return nil, err
+	}
+
 	return &u, nil
+}
+
+func (r *URLRepository) DeleteExpiredURLs(ctx context.Context) (int64, error) {
+	query := `DELETE FROM urls WHERE expires_at IS NOT NULL AND expires_at < now()`
+	result, err := r.db.Pool.Exec(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+
+	rows := result.RowsAffected()
+	return rows, nil
 }

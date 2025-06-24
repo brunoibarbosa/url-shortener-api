@@ -5,87 +5,31 @@ import (
 	"os"
 	"strconv"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
-type PostgresConnection struct {
-	Host     string
-	User     string
-	Password string
-	Name     string
-	Port     int
-}
-
-type Environment struct {
-	SecretKey string
-
-	PostgresConn PostgresConnection
-
-	RedisAddress  string
-	RedisPassword string
-	RedisDB       int
-
-	ExpireDuration time.Duration
-
-	ListenAddress string
-}
-
-type AppConfig struct {
-	Env Environment
-}
-
-func Load() AppConfig {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal(err)
-	}
-
-	return AppConfig{
-		Env: Environment{
-			SecretKey: mustEnv("SECRET_KEY"),
-
-			PostgresConn: PostgresConnection{
-				Host:     mustEnv("DB_HOST"),
-				User:     mustEnv("DB_USER"),
-				Password: mustEnv("DB_PASSWORD"),
-				Name:     mustEnv("DB_NAME"),
-				Port:     mustEnvAsInt("DB_PORT"),
-			},
-
-			RedisAddress:  mustEnv("REDIS_ADDRESS"),
-			RedisPassword: getEnvWithDefault("REDIS_PASSWORD", ""),
-			RedisDB:       getEnvAsInt("REDIS_DB", 0),
-
-			ExpireDuration: mustEnvAsDuration("EXPIRE_DURATION"),
-
-			ListenAddress: mustEnv("LISTEN_ADDRESS"),
-		},
-	}
-}
-
-func getEnv(key string) string {
+func GetEnv(key string) string {
 	val := os.Getenv(key)
 	return val
 }
 
-func mustEnv(key string) string {
-	val := getEnv(key)
+func MustEnv(key string) string {
+	val := GetEnv(key)
 	if val == "" {
 		log.Fatalf("Required environment variable %s not set", key)
 	}
 	return val
 }
 
-func getEnvWithDefault(key, defaultVal string) string {
-	val := getEnv(key)
+func GetEnvWithDefault(key, defaultVal string) string {
+	val := GetEnv(key)
 	if val == "" {
 		return defaultVal
 	}
 	return val
 }
 
-func getEnvAsInt(key string, defaultValue int) int {
-	valStr := getEnvWithDefault(key, strconv.Itoa(defaultValue))
+func GetEnvAsInt(key string, defaultValue int) int {
+	valStr := GetEnvWithDefault(key, strconv.Itoa(defaultValue))
 	val, err := strconv.Atoi(valStr)
 	if err != nil {
 		log.Fatalf("Invalid value for %s: expected integer, got %s", key, valStr)
@@ -93,8 +37,8 @@ func getEnvAsInt(key string, defaultValue int) int {
 	return val
 }
 
-func mustEnvAsDuration(key string) time.Duration {
-	valStr := mustEnv(key)
+func MustEnvAsDuration(key string) time.Duration {
+	valStr := MustEnv(key)
 
 	valDuration, err := time.ParseDuration(valStr)
 	if err != nil {
@@ -104,8 +48,8 @@ func mustEnvAsDuration(key string) time.Duration {
 	return valDuration
 }
 
-func mustEnvAsInt(key string) int {
-	valStr := mustEnv(key)
+func MustEnvAsInt(key string) int {
+	valStr := MustEnv(key)
 
 	valInt, err := strconv.Atoi(valStr)
 	if err != nil {

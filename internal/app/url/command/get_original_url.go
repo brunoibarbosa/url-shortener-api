@@ -7,6 +7,7 @@ import (
 
 	"github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
+	"github.com/brunoibarbosa/url-shortener/pkg/util"
 )
 
 type GetOriginalURLQuery struct {
@@ -14,32 +15,32 @@ type GetOriginalURLQuery struct {
 }
 
 type GetOriginalURLHandler struct {
-	repo           url.URLRepository
-	cache          url.URLCacheRepository
-	secretKey      string
-	expireDuration time.Duration
+	persistRepo             url.URLRepository
+	cacheRepo               url.URLCacheRepository
+	decryptSecretKey        string
+	cacheExpirationDuration time.Duration
 }
 
-func NewGetOriginalURLHandler(repo url.URLRepository, cache url.URLCacheRepository, secretKey string, expireDuration time.Duration) *GetOriginalURLHandler {
+func NewGetOriginalURLHandler(repo url.URLRepository, cache url.URLCacheRepository, secretKey string, cacheExpirationDuration time.Duration) *GetOriginalURLHandler {
 	return &GetOriginalURLHandler{
-		repo:           repo,
-		cache:          cache,
-		secretKey:      secretKey,
-		expireDuration: expireDuration,
+		persistRepo:             repo,
+		cacheRepo:               cache,
+		decryptSecretKey:        secretKey,
+		cacheExpirationDuration: cacheExpirationDuration,
 	}
 }
 
 func (h *GetOriginalURLHandler) Handle(ctx context.Context, query GetOriginalURLQuery) (string, error) {
-	cachedUrl, err := h.cache.FindByShortCode(ctx, query.ShortCode)
+	cachedUrl, err := h.cacheRepo.FindByShortCode(ctx, query.ShortCode)
 	if err != nil {
 		return "", err
 	}
 	if cachedUrl != nil {
-		decryptedUrl := crypto.Decrypt(cachedUrl.EncryptedURL, h.secretKey)
+		decryptedUrl := crypto.Decrypt(cachedUrl.EncryptedURL, h.decryptSecretKey)
 		return decryptedUrl, nil
 	}
 
-	url, err := h.repo.FindByShortCode(ctx, query.ShortCode)
+	url, err := h.persistRepo.FindByShortCode(ctx, query.ShortCode)
 
 	if err != nil {
 		return "", err
@@ -49,8 +50,13 @@ func (h *GetOriginalURLHandler) Handle(ctx context.Context, query GetOriginalURL
 		return "", errors.New("URL not found")
 	}
 
-	h.cache.Save(ctx, url, h.expireDuration)
+	cacheDuration := h.cacheExpirationDuration
+	if url.ExpiresAt != nil {
+		timeRemainingToExpire := url.ExpiresAt.UTC().Sub(time.Now().UTC())
+		cacheDuration = util.MinTimeDuration(timeRemainingToExpire, h.cacheExpirationDuration)
+	}
+	h.cacheRepo.Save(ctx, url, cacheDuration)
 
-	decryptedUrl := crypto.Decrypt(url.EncryptedURL, h.secretKey)
+	decryptedUrl := crypto.Decrypt(url.EncryptedURL, h.decryptSecretKey)
 	return decryptedUrl, nil
 }

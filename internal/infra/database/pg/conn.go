@@ -6,15 +6,22 @@ import (
 	"log"
 	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/config"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+type PostgresConnection struct {
+	Host     string
+	User     string
+	Password string
+	Name     string
+	Port     int
+}
 
 type Postgres struct {
 	Pool *pgxpool.Pool
 }
 
-func NewPostgres(postgres config.PostgresConnection) *Postgres {
+func NewPostgres(postgres PostgresConnection) *Postgres {
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s", postgres.User, postgres.Password, postgres.Host, postgres.Port, postgres.Name)
 
 	config, err := pgxpool.ParseConfig(dsn)

@@ -3,7 +3,6 @@ package redis
 import (
 	"sync"
 
-	"github.com/brunoibarbosa/url-shortener/internal/config"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -12,12 +11,18 @@ var (
 	once        sync.Once
 )
 
-func GetRedisClient(appConfig config.AppConfig) *redis.Client {
+type RedisConfig struct {
+	RedisAddress  string
+	RedisPassword string
+	RedisDB       int
+}
+
+func GetRedisClient(redisConfig RedisConfig) *redis.Client {
 	once.Do(func() {
 		redisClient = redis.NewClient(&redis.Options{
-			Addr:     appConfig.Env.RedisAddress,
-			Password: appConfig.Env.RedisPassword,
-			DB:       appConfig.Env.RedisDB,
+			Addr:     redisConfig.RedisAddress,
+			Password: redisConfig.RedisPassword,
+			DB:       redisConfig.RedisDB,
 		})
 	})
 	return redisClient

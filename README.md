@@ -28,7 +28,7 @@ Um encurtador de URLs simples, rápido e escalável, desenvolvido em **Golang 1.
 - Criar URLs encurtadas.
 - Redirecionamento rápido de URLs.
 - Cache inteligente com Redis usando **LFU eviction policy**.
-- Expiração automática de URLs.
+- Expiração automática de URLs utilizando cronjob.
 - Suporte a mensagens de erro localizadas via i18n.
 - Prevenção de colisões nos códigos encurtados.
 - API RESTful.

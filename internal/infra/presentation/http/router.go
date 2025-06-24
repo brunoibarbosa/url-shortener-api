@@ -1,7 +1,6 @@
 package http
 
 import (
-	"github.com/brunoibarbosa/url-shortener/internal/config"
 	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
 	"github.com/go-chi/chi/v5"
 )
@@ -10,7 +9,7 @@ type AppRouter struct {
 	*chi.Mux
 }
 
-func NewRouter(appConfig config.AppConfig) *AppRouter {
+func NewRouter() *AppRouter {
 	cr := chi.NewRouter()
 	return &AppRouter{
 		Mux: cr,
