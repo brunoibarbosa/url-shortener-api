@@ -40,14 +40,14 @@ func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Reques
 		return nil, err
 	}
 
-	appCmd := command.CreateShortURLCommand{OriginalURL: payload.URL}
-	shortCode, handleErr := h.cmd.Handle(appCmd)
+	appCmd := command.CreateShortURLCommand{OriginalURL: payload.URL, Length: 6, MaxRetries: 10}
+	url, handleErr := h.cmd.Handle(r.Context(), appCmd)
 	if handleErr != nil {
 		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.url.create_failed", nil)
 	}
 
 	response := CreateShortURL201Response{
-		ShortCode: shortCode,
+		ShortCode: url.ShortCode,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

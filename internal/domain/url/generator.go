@@ -2,22 +2,24 @@ package url
 
 import (
 	"crypto/rand"
-	"log"
+	"errors"
 	"math/big"
 )
 
-var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+var charset = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
-func GenerateShortCode() string {
-	b := make([]rune, 6)
-	for i := range b {
-		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
+func GenerateShortCode(length int) (string, error) {
+	r := make([]rune, length)
+	for i := range r {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
 		if err != nil {
-			log.Fatal(err)
+			return "", err
 		}
 
-		b[i] = letters[num.Int64()]
+		r[i] = charset[num.Int64()]
 	}
 
-	return string(b)
+	return string(r), nil
 }
+
+var ErrMaxRetries = errors.New("max retries reached, unable to generate unique short code")

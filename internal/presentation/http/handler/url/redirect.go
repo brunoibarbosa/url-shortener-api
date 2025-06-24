@@ -21,7 +21,7 @@ func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (ha
 	shortCode := chi.URLParam(r, "shortCode")
 
 	appQuery := command.GetOriginalURLQuery{ShortCode: shortCode}
-	originalURL, err := h.cmd.Handle(appQuery)
+	originalURL, err := h.cmd.Handle(r.Context(), appQuery)
 	ctx := r.Context()
 	if err != nil || originalURL == "" {
 		return nil, handler.NewI18nHTTPError(ctx, http.StatusNotFound, errors.CodeNotFound, "error.common.not_found", nil)

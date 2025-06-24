@@ -9,8 +9,18 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type PostgresConnection struct {
+	Host     string
+	User     string
+	Password string
+	Name     string
+	Port     int
+}
+
 type Environment struct {
 	SecretKey string
+
+	PostgresConn PostgresConnection
 
 	RedisAddress  string
 	RedisPassword string
@@ -33,6 +43,14 @@ func Load() AppConfig {
 	return AppConfig{
 		Env: Environment{
 			SecretKey: mustEnv("SECRET_KEY"),
+
+			PostgresConn: PostgresConnection{
+				Host:     mustEnv("DB_HOST"),
+				User:     mustEnv("DB_USER"),
+				Password: mustEnv("DB_PASSWORD"),
+				Name:     mustEnv("DB_NAME"),
+				Port:     mustEnvAsInt("DB_PORT"),
+			},
 
 			RedisAddress:  mustEnv("REDIS_ADDRESS"),
 			RedisPassword: getEnvWithDefault("REDIS_PASSWORD", ""),
@@ -84,4 +102,15 @@ func mustEnvAsDuration(key string) time.Duration {
 	}
 
 	return valDuration
+}
+
+func mustEnvAsInt(key string) int {
+	valStr := mustEnv(key)
+
+	valInt, err := strconv.Atoi(valStr)
+	if err != nil {
+		log.Fatalf("Invalid value for %s: expected int, got %s", key, valStr)
+	}
+
+	return valInt
 }
