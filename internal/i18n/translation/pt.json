@@ -1,0 +1,15 @@
+{
+  "error.server.internal": "Erro interno do servidor",
+
+  "error.common.not_found": "Nenhum resultado encontrado",
+  "error.common.empty_body": "O corpo da requisição não pode estar vazio",
+  "error.common.encode_failed": "Falha ao codificar a resposta",
+
+  "error.url.url_required": "O campo 'url' é obrigatório no corpo da requisição",
+  "error.url.create_failed": "Falha ao criar URL encurtada",
+  "error.url.missing_schema": "A URL está sem o esquema (por exemplo, http ou https)",
+  "error.url.unsupported_schema": "Esquema não suportado",
+  "error.url.missing_host": "A URL está sem o host",
+  "error.url.invalid_url": "URL inválida",
+  "error.url.expired_url": "A URL expirou"
+}

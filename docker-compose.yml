@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: url_shortener_postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: url_shortener
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--maxmemory", "512mb", "--maxmemory-policy", "volatile-lfu"]
+  url-shortener-api:
+    build: .
+    image: url-shortener-api:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./cmd/url-shortener/.env:/app/.env
+    depends_on:
+      - redis
+
+volumes:
+  pgdata:

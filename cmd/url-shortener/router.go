@@ -1,0 +1,25 @@
+package main
+
+import (
+	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
+	http_router "github.com/brunoibarbosa/url-shortener/internal/infra/presentation/http"
+	http "github.com/brunoibarbosa/url-shortener/internal/infra/presentation/http/routes"
+	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/middleware"
+	"github.com/redis/go-redis/v9"
+)
+
+func getRouter(postgres *pg.Postgres, redisClient *redis.Client, appConfig AppConfig) *http_router.AppRouter {
+	r := http_router.NewRouter()
+
+	r.Use(
+		middleware.LocaleMiddleware,
+		middleware.RecoverMiddleware,
+	)
+	http.SetupURLRoutes(r, postgres, redisClient, http.URLRoutesConfig{
+		SecretKey:                    appConfig.Env.SecretKey,
+		URLPersistExpirationDuration: appConfig.Env.URLPersistExpirationDuration,
+		URLCacheExpirationDuration:   appConfig.Env.URLCacheExpirationDuration,
+	})
+
+	return r
+}
