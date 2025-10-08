@@ -10,7 +10,8 @@ import (
 )
 
 type Environment struct {
-	SecretKey string
+	URLSecret string
+	JWTSecret string
 
 	PostgresConn pg.PostgresConnection
 
@@ -35,7 +36,8 @@ func LoadAppConfig() AppConfig {
 
 	return AppConfig{
 		Env: Environment{
-			SecretKey: config.MustEnv("SECRET_KEY"),
+			URLSecret: config.MustEnv("URL_SECRET"),
+			JWTSecret: config.MustEnv("JWT_SECRET"),
 
 			PostgresConn: pg.PostgresConnection{
 				Host:     config.MustEnv("DB_HOST"),

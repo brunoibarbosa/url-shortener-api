@@ -13,7 +13,7 @@ import (
 )
 
 type URLRoutesConfig struct {
-	SecretKey                    string
+	URLSecret                    string
 	URLPersistExpirationDuration time.Duration
 	URLCacheExpirationDuration   time.Duration
 }
@@ -22,8 +22,8 @@ func SetupURLRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, redisClient *
 	repo := pg_repo.NewURLRepository(pgConn)
 	cache := redis_repo.NewURLCacheRepository(redisClient)
 
-	createHandler := command.NewCreateShortURLHandler(repo, cache, config.SecretKey, config.URLPersistExpirationDuration, config.URLCacheExpirationDuration)
-	getHandler := command.NewGetOriginalURLHandler(repo, cache, config.SecretKey, config.URLCacheExpirationDuration)
+	createHandler := command.NewCreateShortURLHandler(repo, cache, config.URLSecret, config.URLPersistExpirationDuration, config.URLCacheExpirationDuration)
+	getHandler := command.NewGetOriginalURLHandler(repo, cache, config.URLSecret, config.URLCacheExpirationDuration)
 
 	createHTTPHandler := handler.NewCreateShortURLHTTPHandler(createHandler)
 	redirectHTTPHandler := handler.NewRedirectHTTPHandler(getHandler)

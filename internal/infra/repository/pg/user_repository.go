@@ -4,60 +4,49 @@ import (
 	"context"
 	"time"
 
+	"github.com/brunoibarbosa/url-shortener/internal/domain/user"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
-
-type User struct {
-	ID           int64
-	Email        string
-	PasswordHash string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-}
-
-type UserProfile struct {
-	ID        int64
-	UserID    int64
-	Name      string
-	AvatarURL string
-	Phone     string
-	BirthDate *time.Time
-}
-
-type UserProvider struct {
-	ID           int64
-	UserID       int64
-	Provider     string
-	ProviderID   string
-	AccessToken  string
-	RefreshToken string
-	CreatedAt    time.Time
-}
 
 type UserRepository struct {
 	db *pg.Postgres
 }
 
-func (r *UserRepository) CreateUser(ctx context.Context, email, passwordHash string) (int64, error) {
-	var id int64
-	err := r.db.Pool.QueryRow(ctx, "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id",
-		email, passwordHash).Scan(&id)
-	return id, err
+func NewUserRepository(pg *pg.Postgres) *UserRepository {
+	return &UserRepository{
+		db: pg,
+	}
 }
 
-func (r *UserRepository) CreateuserWithProvider(ctx context.Context, email, provider, providerID, accessToken, refreshToken string) (int64, error) {
-	var id int64
+func (r *UserRepository) CreateUser(ctx context.Context, email, passwordHash string) (*user.User, error) {
+	var id uuid.UUID
+	var createdAt time.Time
+
+	err := r.db.Pool.QueryRow(ctx, "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, created_at",
+		email, passwordHash).Scan(&id, &createdAt)
+	return &user.User{
+		ID:        id,
+		Email:     email,
+		CreatedAt: createdAt,
+	}, err
+}
+
+func (r *UserRepository) CreateUserWithProvider(ctx context.Context, email, provider, providerID, accessToken, refreshToken string) (*user.User, error) {
+	var id uuid.UUID
+	var createdAt time.Time
+
 	tx, err := r.db.Pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		tx.Rollback(ctx)
-		return 0, err
+		return nil, err
 	}
 
-	err = tx.QueryRow(ctx, "INSERT INTO users (email) VALUES ($1) RETURNING id", email).Scan(&id)
+	err = tx.QueryRow(ctx, "INSERT INTO users (email) VALUES ($1) RETURNING id, created_at", email).Scan(&id, &createdAt)
 	if err != nil {
 		tx.Rollback(ctx)
-		return 0, err
+		return nil, err
 	}
 
 	_, err = tx.Exec(ctx, "INSERT INTO user_providers (user_id, provider, provider_id, access_token, refresh_token) VALUES ($1, $2, $3, $4, $5)",
@@ -65,8 +54,35 @@ func (r *UserRepository) CreateuserWithProvider(ctx context.Context, email, prov
 
 	if err != nil {
 		tx.Rollback(ctx)
-		return 0, err
+		return nil, err
 	}
 
-	return id, tx.Commit(ctx)
+	return &user.User{
+		ID:        id,
+		Email:     email,
+		CreatedAt: createdAt,
+	}, tx.Commit(ctx)
+}
+
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*user.User, error) {
+	row := r.db.Pool.QueryRow(ctx,
+		"SELECT id, email, password_hash, created_at, updated_at FROM users WHERE email=$1", email)
+
+	var u user.User
+	err := row.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
+	return &u, err
+}
+
+func (r *UserRepository) GetByProvider(ctx context.Context, provider, providerID string) (*user.User, error) {
+	row := r.db.Pool.QueryRow(ctx,
+		`SELECT u.id, u.email, u.password_hash, u.created_at, u.updated_at
+		 FROM users u
+		 INNER JOIN user_providers p ON p.user_id = u.id
+		 WHERE p.provider=$1 AND p.provider_id=$2`,
+		provider, providerID,
+	)
+
+	var u user.User
+	err := row.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
+	return &u, err
 }

@@ -16,9 +16,12 @@ func getRouter(postgres *pg.Postgres, redisClient *redis.Client, appConfig AppCo
 		middleware.RecoverMiddleware,
 	)
 	http.SetupURLRoutes(r, postgres, redisClient, http.URLRoutesConfig{
-		SecretKey:                    appConfig.Env.SecretKey,
+		URLSecret:                    appConfig.Env.URLSecret,
 		URLPersistExpirationDuration: appConfig.Env.URLPersistExpirationDuration,
 		URLCacheExpirationDuration:   appConfig.Env.URLCacheExpirationDuration,
+	})
+	http.SetupUserRoutes(r, postgres, http.UserRoutesConfig{
+		JWTSecret: appConfig.Env.JWTSecret,
 	})
 
 	return r

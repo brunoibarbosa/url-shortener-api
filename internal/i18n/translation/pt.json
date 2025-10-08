@@ -11,5 +11,8 @@
   "error.url.unsupported_schema": "Esquema não suportado",
   "error.url.missing_host": "A URL está sem o host",
   "error.url.invalid_url": "URL inválida",
-  "error.url.expired_url": "A URL expirou"
+  "error.url.expired_url": "A URL expirou",
+
+  "error.user.create_failed": "Falha ao registrar usuário",
+  "error.email.invalid_email_format": "Email inválido"
 }

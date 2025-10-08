@@ -19,7 +19,7 @@ type CreateShortURLPayload struct {
 }
 
 type CreateShortURL201Response struct {
-	ShortCode string `json:"short_code"`
+	ShortCode string `json:"shortCode"`
 }
 
 type CreateShortURLHTTPHandler struct {
