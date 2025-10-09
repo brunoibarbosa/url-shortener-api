@@ -14,5 +14,10 @@
   "error.url.expired_url": "URL has expired",
 
   "error.user.create_failed": "Failed to register user",
-  "error.email.invalid_email_format": "Invalid email"
+  "error.email.invalid_email_format": "Invalid email",
+  "error.password.missing_digit": "Password must contain at least one digit",
+  "error.password.missing_lower": "Password must contain at least one lowercase letter",
+  "error.password.missing_uper": "Password must contain at least one uppercase letter",
+  "error.password.missing_symbol": "Password must contain at least one special character",
+  "error.password.too_short": "Password must be at least 8 characters long"
 }

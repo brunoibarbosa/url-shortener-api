@@ -8,7 +8,12 @@ import (
 )
 
 var (
-	ErrInvalidEmailFormat = errors.New("invalid email format")
+	ErrInvalidEmailFormat    = errors.New("invalid email format")
+	ErrPasswordTooShort      = errors.New("password must be at least 8 characters long")
+	ErrPasswordMissingUpper  = errors.New("password must contain at least one uppercase letter")
+	ErrPasswordMissingLower  = errors.New("password must contain at least one lowercase letter")
+	ErrPasswordMissingDigit  = errors.New("password must contain at least one digit")
+	ErrPasswordMissingSymbol = errors.New("password must contain at least one special character")
 )
 
 type User struct {

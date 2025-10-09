@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/user/command"
+	"github.com/brunoibarbosa/url-shortener/internal/domain/user"
 	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
 	"github.com/brunoibarbosa/url-shortener/internal/validation"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
@@ -74,11 +75,23 @@ func parseAndValidatePayload(r *http.Request, ctx context.Context) (RegisterUser
 	}
 
 	if validationErr := validation.ValidateEmail(payload.Email); validationErr != nil {
+		return RegisterUserPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.email.invalid_email_format", nil)
+	}
+
+	if validationErr := validation.ValidatePassword(payload.Password); validationErr != nil {
 		var errorCode string
 
 		switch {
+		case err.Is(validationErr, user.ErrPasswordMissingDigit):
+			errorCode = "error.password.missing_digit"
+		case err.Is(validationErr, user.ErrPasswordMissingLower):
+			errorCode = "error.password.missing_lower"
+		case err.Is(validationErr, user.ErrPasswordMissingUpper):
+			errorCode = "error.password.missing_uper"
+		case err.Is(validationErr, user.ErrPasswordMissingSymbol):
+			errorCode = "error.password.missing_symbol"
 		default:
-			errorCode = "error.email.invalid_email_format"
+			errorCode = "error.password.too_short"
 		}
 
 		return RegisterUserPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, errorCode, nil)

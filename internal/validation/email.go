@@ -79,6 +79,4 @@ func isValidFormat(email string) bool {
 	// checar caracteres do local-part com regexp básica
 	localRegexp := regexp.MustCompile(`^[A-Za-z0-9!#\$%&'\*\+/=\?\^_` + "`" + `{|}~\.-]+$`)
 	return localRegexp.MatchString(local)
-
-	return true
 }
