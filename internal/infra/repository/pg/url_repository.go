@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/domain/url"
+	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
 )
 
@@ -24,13 +24,13 @@ func (r *URLRepository) Exists(ctx context.Context, shortCode string) (bool, err
 	return exists, err
 }
 
-func (r *URLRepository) Save(ctx context.Context, u *url.URL) error {
+func (r *URLRepository) Save(ctx context.Context, u *domain.URL) error {
 	_, err := r.db.Pool.Exec(ctx, "INSERT INTO urls (short_code, encrypted_url, expires_at) VALUES ($1, $2, $3)", u.ShortCode, u.EncryptedURL, u.ExpiresAt.UTC())
 	return err
 }
 
-func (r *URLRepository) FindByShortCode(ctx context.Context, shortCode string) (*url.URL, error) {
-	u := url.URL{
+func (r *URLRepository) FindByShortCode(ctx context.Context, shortCode string) (*domain.URL, error) {
+	u := domain.URL{
 		ShortCode:    shortCode,
 		EncryptedURL: "",
 		ExpiresAt:    nil,
@@ -42,7 +42,7 @@ func (r *URLRepository) FindByShortCode(ctx context.Context, shortCode string) (
 	}
 
 	if u.ExpiresAt != nil && time.Now().UTC().After(u.ExpiresAt.UTC()) {
-		err := url.ErrExpiredURL
+		err := domain.ErrExpiredURL
 		return nil, err
 	}
 

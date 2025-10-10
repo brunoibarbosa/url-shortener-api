@@ -14,6 +14,7 @@
   "error.url.expired_url": "A URL expirou",
 
   "error.user.create_failed": "Falha ao registrar usuário",
+  "error.email.email_already_exists": "Email já está em uso",
   "error.email.invalid_email_format": "Email inválido",
   "error.password.missing_digit": "A senha deve conter ao menos um número",
   "error.password.missing_lower": "A senha deve conter ao menos uma letra minúscula",

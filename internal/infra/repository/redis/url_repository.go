@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/domain/url"
+	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -24,11 +24,11 @@ func (r *URLCacheRepository) Exists(ctx context.Context, shortCode string) (bool
 	return exists > 0, err
 }
 
-func (r *URLCacheRepository) Save(ctx context.Context, url *url.URL, expires time.Duration) error {
+func (r *URLCacheRepository) Save(ctx context.Context, url *domain.URL, expires time.Duration) error {
 	return r.client.Set(ctx, url.ShortCode, url.EncryptedURL, expires).Err()
 }
 
-func (r *URLCacheRepository) FindByShortCode(ctx context.Context, shortCode string) (*url.URL, error) {
+func (r *URLCacheRepository) FindByShortCode(ctx context.Context, shortCode string) (*domain.URL, error) {
 	encryptedUrl, err := r.client.Get(ctx, shortCode).Result()
 
 	if err != nil {
@@ -38,7 +38,7 @@ func (r *URLCacheRepository) FindByShortCode(ctx context.Context, shortCode stri
 		return nil, err
 	}
 
-	return &url.URL{
+	return &domain.URL{
 		ShortCode:    shortCode,
 		EncryptedURL: encryptedUrl,
 		ExpiresAt:    nil,

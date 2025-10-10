@@ -5,6 +5,7 @@ import (
 )
 
 type UserRepository interface {
+	Exists(ctx context.Context, email string) (bool, error)
 	CreateUser(ctx context.Context, email, passwordHash string) (*User, error)
 	CreateUserWithProvider(ctx context.Context, email, provider, providerID, accessToken, refreshToken string) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)

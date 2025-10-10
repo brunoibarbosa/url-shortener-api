@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/domain/user"
+	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -17,11 +17,11 @@ type LoginSocialCommand struct {
 }
 
 type LoginSocialHandler struct {
-	repo             user.UserRepository
+	repo             domain.UserRepository
 	encryptSecretKey string
 }
 
-func NewLoginSocialHandler(repo user.UserRepository, secretKey string) *LoginSocialHandler {
+func NewLoginSocialHandler(repo domain.UserRepository, secretKey string) *LoginSocialHandler {
 	return &LoginSocialHandler{
 		repo:             repo,
 		encryptSecretKey: secretKey,

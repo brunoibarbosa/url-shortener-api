@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	ErrEmailAlreadyExists    = errors.New("email already in use")
 	ErrInvalidEmailFormat    = errors.New("invalid email format")
 	ErrPasswordTooShort      = errors.New("password must be at least 8 characters long")
 	ErrPasswordMissingUpper  = errors.New("password must contain at least one uppercase letter")

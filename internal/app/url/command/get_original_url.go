@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/domain/url"
+	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
 	"github.com/brunoibarbosa/url-shortener/pkg/util"
 )
@@ -15,13 +15,13 @@ type GetOriginalURLQuery struct {
 }
 
 type GetOriginalURLHandler struct {
-	persistRepo             url.URLRepository
-	cacheRepo               url.URLCacheRepository
+	persistRepo             domain.URLRepository
+	cacheRepo               domain.URLCacheRepository
 	decryptSecretKey        string
 	cacheExpirationDuration time.Duration
 }
 
-func NewGetOriginalURLHandler(repo url.URLRepository, cache url.URLCacheRepository, secretKey string, cacheExpirationDuration time.Duration) *GetOriginalURLHandler {
+func NewGetOriginalURLHandler(repo domain.URLRepository, cache domain.URLCacheRepository, secretKey string, cacheExpirationDuration time.Duration) *GetOriginalURLHandler {
 	return &GetOriginalURLHandler{
 		persistRepo:             repo,
 		cacheRepo:               cache,

@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
-	"github.com/brunoibarbosa/url-shortener/internal/domain/url"
+	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
 	"github.com/brunoibarbosa/url-shortener/internal/validation"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
@@ -75,11 +75,11 @@ func parseAndValidatePayload(r *http.Request, ctx context.Context) (CreateShortU
 		var errorCode string
 
 		switch {
-		case err.Is(validationErr, url.ErrMissingURLSchema):
+		case err.Is(validationErr, domain.ErrMissingURLSchema):
 			errorCode = "error.url.missing_schema"
-		case err.Is(validationErr, url.ErrUnsupportedURLSchema):
+		case err.Is(validationErr, domain.ErrUnsupportedURLSchema):
 			errorCode = "error.url.unsupported_schema"
-		case err.Is(validationErr, url.ErrMissingURLHost):
+		case err.Is(validationErr, domain.ErrMissingURLHost):
 			errorCode = "error.url.missing_host"
 		default:
 			errorCode = "error.url.invalid_url"

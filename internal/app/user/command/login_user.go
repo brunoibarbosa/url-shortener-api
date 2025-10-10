@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/domain/user"
+	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -16,11 +16,11 @@ type LoginUserCommand struct {
 }
 
 type LoginUserHandler struct {
-	repo             user.UserRepository
+	repo             domain.UserRepository
 	encryptSecretKey string
 }
 
-func NewLoginUserHandler(repo user.UserRepository, secretKey string) *LoginUserHandler {
+func NewLoginUserHandler(repo domain.UserRepository, secretKey string) *LoginUserHandler {
 	return &LoginUserHandler{
 		repo:             repo,
 		encryptSecretKey: secretKey,

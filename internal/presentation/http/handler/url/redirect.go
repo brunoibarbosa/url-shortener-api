@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
-	"github.com/brunoibarbosa/url-shortener/internal/domain/url"
+	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
 	app_errors "github.com/brunoibarbosa/url-shortener/pkg/errors"
 	"github.com/go-chi/chi/v5"
@@ -26,7 +26,7 @@ func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (ha
 	originalURL, err := h.cmd.Handle(r.Context(), appQuery)
 	ctx := r.Context()
 
-	if err != nil && errors.Is(err, url.ErrExpiredURL) {
+	if err != nil && errors.Is(err, domain.ErrExpiredURL) {
 		return nil, handler.NewI18nHTTPError(ctx, http.StatusGone, app_errors.CodeNotFound, "error.url.expired_url", nil)
 	}
 

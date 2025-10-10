@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/domain/user"
+	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -20,20 +20,26 @@ func NewUserRepository(pg *pg.Postgres) *UserRepository {
 	}
 }
 
-func (r *UserRepository) CreateUser(ctx context.Context, email, passwordHash string) (*user.User, error) {
+func (r *UserRepository) Exists(ctx context.Context, email string) (bool, error) {
+	var exists bool
+	err := r.db.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)", email).Scan(&exists)
+	return exists, err
+}
+
+func (r *UserRepository) CreateUser(ctx context.Context, email, passwordHash string) (*domain.User, error) {
 	var id uuid.UUID
 	var createdAt time.Time
 
 	err := r.db.Pool.QueryRow(ctx, "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, created_at",
 		email, passwordHash).Scan(&id, &createdAt)
-	return &user.User{
+	return &domain.User{
 		ID:        id,
 		Email:     email,
 		CreatedAt: createdAt,
 	}, err
 }
 
-func (r *UserRepository) CreateUserWithProvider(ctx context.Context, email, provider, providerID, accessToken, refreshToken string) (*user.User, error) {
+func (r *UserRepository) CreateUserWithProvider(ctx context.Context, email, provider, providerID, accessToken, refreshToken string) (*domain.User, error) {
 	var id uuid.UUID
 	var createdAt time.Time
 
@@ -57,23 +63,23 @@ func (r *UserRepository) CreateUserWithProvider(ctx context.Context, email, prov
 		return nil, err
 	}
 
-	return &user.User{
+	return &domain.User{
 		ID:        id,
 		Email:     email,
 		CreatedAt: createdAt,
 	}, tx.Commit(ctx)
 }
 
-func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*user.User, error) {
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	row := r.db.Pool.QueryRow(ctx,
 		"SELECT id, email, password_hash, created_at, updated_at FROM users WHERE email=$1", email)
 
-	var u user.User
+	var u domain.User
 	err := row.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 	return &u, err
 }
 
-func (r *UserRepository) GetByProvider(ctx context.Context, provider, providerID string) (*user.User, error) {
+func (r *UserRepository) GetByProvider(ctx context.Context, provider, providerID string) (*domain.User, error) {
 	row := r.db.Pool.QueryRow(ctx,
 		`SELECT u.id, u.email, u.password_hash, u.created_at, u.updated_at
 		 FROM users u
@@ -82,7 +88,7 @@ func (r *UserRepository) GetByProvider(ctx context.Context, provider, providerID
 		provider, providerID,
 	)
 
-	var u user.User
+	var u domain.User
 	err := row.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 	return &u, err
 }

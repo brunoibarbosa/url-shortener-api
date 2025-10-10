@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/domain/url"
+	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
 	"github.com/brunoibarbosa/url-shortener/pkg/util"
 )
@@ -16,14 +16,14 @@ type CreateShortURLCommand struct {
 }
 
 type CreateShortURLHandler struct {
-	persistRepo               url.URLRepository
-	cacheRepo                 url.URLCacheRepository
+	persistRepo               domain.URLRepository
+	cacheRepo                 domain.URLCacheRepository
 	encryptSecretKey          string
 	persistExpirationDuration time.Duration
 	cacheExpirationDuration   time.Duration
 }
 
-func NewCreateShortURLHandler(repo url.URLRepository, cache url.URLCacheRepository, secretKey string, persistExpirationDuration time.Duration, cacheExpirationDuration time.Duration) *CreateShortURLHandler {
+func NewCreateShortURLHandler(repo domain.URLRepository, cache domain.URLCacheRepository, secretKey string, persistExpirationDuration time.Duration, cacheExpirationDuration time.Duration) *CreateShortURLHandler {
 	return &CreateShortURLHandler{
 		persistRepo:               repo,
 		cacheRepo:                 cache,
@@ -33,16 +33,16 @@ func NewCreateShortURLHandler(repo url.URLRepository, cache url.URLCacheReposito
 	}
 }
 
-func (h *CreateShortURLHandler) Handle(ctx context.Context, cmd CreateShortURLCommand) (url.URL, error) {
+func (h *CreateShortURLHandler) Handle(ctx context.Context, cmd CreateShortURLCommand) (domain.URL, error) {
 	for range cmd.MaxRetries {
-		shortCode, err := url.GenerateShortCode(cmd.Length)
+		shortCode, err := domain.GenerateShortCode(cmd.Length)
 		if err != nil {
-			return url.URL{}, err
+			return domain.URL{}, err
 		}
 
 		existsRedis, err := h.cacheRepo.Exists(ctx, shortCode)
 		if err != nil {
-			return url.URL{}, err
+			return domain.URL{}, err
 		}
 		if existsRedis {
 			continue
@@ -50,7 +50,7 @@ func (h *CreateShortURLHandler) Handle(ctx context.Context, cmd CreateShortURLCo
 
 		existsDB, err := h.persistRepo.Exists(ctx, shortCode)
 		if err != nil {
-			return url.URL{}, err
+			return domain.URL{}, err
 		}
 		if existsDB {
 			continue
@@ -58,7 +58,7 @@ func (h *CreateShortURLHandler) Handle(ctx context.Context, cmd CreateShortURLCo
 
 		encryptedUrl := crypto.Encrypt(cmd.OriginalURL, h.encryptSecretKey)
 		expiresAt := time.Now().Add(h.persistExpirationDuration)
-		u := &url.URL{
+		u := &domain.URL{
 			ShortCode:    shortCode,
 			EncryptedURL: encryptedUrl,
 			ExpiresAt:    &expiresAt,
@@ -67,17 +67,17 @@ func (h *CreateShortURLHandler) Handle(ctx context.Context, cmd CreateShortURLCo
 		cacheDuration := util.MinTimeDuration(h.cacheExpirationDuration, h.persistExpirationDuration)
 		err = h.cacheRepo.Save(ctx, u, cacheDuration)
 		if err != nil {
-			return url.URL{}, err
+			return domain.URL{}, err
 		}
 
-		shortURL := url.URL{ShortCode: shortCode}
+		shortURL := domain.URL{ShortCode: shortCode}
 		if err := h.persistRepo.Save(ctx, u); err != nil {
 			_ = h.cacheRepo.Delete(ctx, shortCode)
-			return url.URL{}, err
+			return domain.URL{}, err
 		}
 
 		return shortURL, nil
 	}
 
-	return url.URL{}, url.ErrMaxRetries
+	return domain.URL{}, domain.ErrMaxRetries
 }

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/user/command"
-	"github.com/brunoibarbosa/url-shortener/internal/domain/user"
+	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
 	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
 	"github.com/brunoibarbosa/url-shortener/internal/validation"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
@@ -40,15 +40,20 @@ func NewRegisterUserHTTPHandler(cmd *command.RegisterUserHandler) *RegisterUserH
 func (h *RegisterUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
 	ctx := r.Context()
 
-	payload, err := parseAndValidatePayload(r, ctx)
-	if err != nil {
-		return nil, err
+	payload, validationErr := parseAndValidatePayload(r, ctx)
+	if validationErr != nil {
+		return nil, validationErr
 	}
 
 	appCmd := command.RegisterUserCommand{Email: payload.Email, Password: payload.Password}
 	user, handleErr := h.cmd.Handle(r.Context(), appCmd)
 	if handleErr != nil {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.user.create_failed", nil)
+		switch {
+		case err.Is(handleErr, domain.ErrEmailAlreadyExists):
+			return nil, handler.NewI18nHTTPError(ctx, http.StatusConflict, errors.CodeValidationError, "error.email.email_already_exists", nil)
+		default:
+			return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.user.create_failed", nil)
+		}
 	}
 
 	response := RegisterUser201Response{
@@ -82,13 +87,13 @@ func parseAndValidatePayload(r *http.Request, ctx context.Context) (RegisterUser
 		var errorCode string
 
 		switch {
-		case err.Is(validationErr, user.ErrPasswordMissingDigit):
+		case err.Is(validationErr, domain.ErrPasswordMissingDigit):
 			errorCode = "error.password.missing_digit"
-		case err.Is(validationErr, user.ErrPasswordMissingLower):
+		case err.Is(validationErr, domain.ErrPasswordMissingLower):
 			errorCode = "error.password.missing_lower"
-		case err.Is(validationErr, user.ErrPasswordMissingUpper):
+		case err.Is(validationErr, domain.ErrPasswordMissingUpper):
 			errorCode = "error.password.missing_uper"
-		case err.Is(validationErr, user.ErrPasswordMissingSymbol):
+		case err.Is(validationErr, domain.ErrPasswordMissingSymbol):
 			errorCode = "error.password.missing_symbol"
 		default:
 			errorCode = "error.password.too_short"
