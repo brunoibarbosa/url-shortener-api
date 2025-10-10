@@ -24,5 +24,7 @@
   "error.password.required": "Password is required",
 
   "error.login.invalid_credentials": "Invalid email or password",
+  "error.login.social_login_only": "User has no password (social login only)",
   "error.login.failed": "Failed to login"
+  
 }

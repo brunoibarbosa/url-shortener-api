@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
@@ -47,7 +46,7 @@ func (h *GetOriginalURLHandler) Handle(ctx context.Context, query GetOriginalURL
 	}
 
 	if url == nil {
-		return "", errors.New("URL not found")
+		return "", domain.ErrURLNotFound
 	}
 
 	cacheDuration := h.cacheExpirationDuration

@@ -30,7 +30,7 @@ func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (ha
 		return nil, handler.NewI18nHTTPError(ctx, http.StatusGone, app_errors.CodeNotFound, "error.url.expired_url", nil)
 	}
 
-	if err != nil || originalURL == "" {
+	if (err != nil && errors.Is(err, domain.ErrURLNotFound)) || originalURL == "" {
 		return nil, handler.NewI18nHTTPError(ctx, http.StatusNotFound, app_errors.CodeNotFound, "error.common.not_found", nil)
 	}
 

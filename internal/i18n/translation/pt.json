@@ -24,5 +24,6 @@
   "error.password.required": "Senha obrigatória",
 
   "error.login.invalid_credentials": "Email ou senha inválido",
+  "error.login.social_login_only": "O usuário não possui senha (apenas login social)",
   "error.login.failed": "Falha ao realizar login"
 }

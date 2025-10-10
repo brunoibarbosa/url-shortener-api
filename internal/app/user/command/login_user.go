@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
@@ -42,7 +41,7 @@ func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (*L
 	}
 
 	if u.PasswordHash == nil {
-		return nil, errors.New("user has no password (social login only)")
+		return nil, domain.ErrSocialLoginOnly
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(*u.PasswordHash), []byte(cmd.Password)) != nil {

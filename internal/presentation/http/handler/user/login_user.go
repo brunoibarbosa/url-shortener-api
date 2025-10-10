@@ -57,6 +57,8 @@ func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (h
 		switch {
 		case err.Is(handleErr, domain.ErrInvalidCredentials):
 			return nil, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.login.invalid_credentials", nil)
+		case err.Is(handleErr, domain.ErrSocialLoginOnly):
+			return nil, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.login.invalid_credentials", nil)
 		default:
 			return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.login.failed", nil)
 		}

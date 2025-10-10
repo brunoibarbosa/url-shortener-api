@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	ErrSocialLoginOnly       = errors.New("user has no password (social login only)")
 	ErrInvalidCredentials    = errors.New("invalid email or password")
 	ErrEmailAlreadyExists    = errors.New("email already in use")
 	ErrInvalidEmailFormat    = errors.New("invalid email format")
