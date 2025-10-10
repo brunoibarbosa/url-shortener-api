@@ -40,7 +40,7 @@ func NewRegisterUserHTTPHandler(cmd *command.RegisterUserHandler) *RegisterUserH
 func (h *RegisterUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
 	ctx := r.Context()
 
-	payload, validationErr := parseAndValidatePayload(r, ctx)
+	payload, validationErr := validateRegisterPayload(r, ctx)
 	if validationErr != nil {
 		return nil, validationErr
 	}
@@ -63,7 +63,7 @@ func (h *RegisterUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
+	w.WriteHeader(http.StatusCreated)
 	if encodeErr := json.NewEncoder(w).Encode(response); encodeErr != nil {
 		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
 	}
@@ -71,7 +71,7 @@ func (h *RegisterUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	return nil, nil
 }
 
-func parseAndValidatePayload(r *http.Request, ctx context.Context) (RegisterUserPayload, *handler.HTTPError) {
+func validateRegisterPayload(r *http.Request, ctx context.Context) (RegisterUserPayload, *handler.HTTPError) {
 	var payload RegisterUserPayload
 	decodeErr := json.NewDecoder(r.Body).Decode(&payload)
 

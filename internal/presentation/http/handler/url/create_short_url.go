@@ -35,7 +35,7 @@ func NewCreateShortURLHTTPHandler(cmd *command.CreateShortURLHandler) *CreateSho
 func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
 	ctx := r.Context()
 
-	payload, err := parseAndValidatePayload(r, ctx)
+	payload, err := validateShortenPayload(r, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
+	w.WriteHeader(http.StatusCreated)
 	if encodeErr := json.NewEncoder(w).Encode(response); encodeErr != nil {
 		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
 	}
@@ -59,7 +59,7 @@ func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Reques
 	return nil, nil
 }
 
-func parseAndValidatePayload(r *http.Request, ctx context.Context) (CreateShortURLPayload, *handler.HTTPError) {
+func validateShortenPayload(r *http.Request, ctx context.Context) (CreateShortURLPayload, *handler.HTTPError) {
 	var payload CreateShortURLPayload
 	decodeErr := json.NewDecoder(r.Body).Decode(&payload)
 

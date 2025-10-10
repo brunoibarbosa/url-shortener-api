@@ -20,5 +20,9 @@
   "error.password.missing_lower": "Password must contain at least one lowercase letter",
   "error.password.missing_uper": "Password must contain at least one uppercase letter",
   "error.password.missing_symbol": "Password must contain at least one special character",
-  "error.password.too_short": "Password must be at least 8 characters long"
+  "error.password.too_short": "Password must be at least 8 characters long",
+  "error.password.required": "Password is required",
+
+  "error.login.invalid_credentials": "Invalid email or password",
+  "error.login.failed": "Failed to login"
 }

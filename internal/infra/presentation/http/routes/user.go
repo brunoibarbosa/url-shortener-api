@@ -15,9 +15,12 @@ type UserRoutesConfig struct {
 func SetupUserRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, config UserRoutesConfig) {
 	repo := pg_repo.NewUserRepository(pgConn)
 
-	registerHandler := command.NewRegisteUserHandler(repo, config.JWTSecret)
+	registerHandler := command.NewRegisterUserHandler(repo)
+	loginHandler := command.NewLoginUserHandler(repo, config.JWTSecret)
 
 	registerHTTPHandler := handler.NewRegisterUserHTTPHandler(registerHandler)
+	loginHTTPHandler := handler.NewLoginUserHTTPHandler(loginHandler)
 
 	r.Post("/register", registerHTTPHandler.Handle)
+	r.Post("/login", loginHTTPHandler.Handle)
 }

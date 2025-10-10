@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	ErrInvalidCredentials    = errors.New("invalid email or password")
 	ErrEmailAlreadyExists    = errors.New("email already in use")
 	ErrInvalidEmailFormat    = errors.New("invalid email format")
 	ErrPasswordTooShort      = errors.New("password must be at least 8 characters long")
@@ -22,7 +23,7 @@ type User struct {
 	Email        string
 	PasswordHash *string
 	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	UpdatedAt    *time.Time
 }
 
 type UserProfile struct {

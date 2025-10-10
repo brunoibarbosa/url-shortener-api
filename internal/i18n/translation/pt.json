@@ -20,5 +20,9 @@
   "error.password.missing_lower": "A senha deve conter ao menos uma letra minúscula",
   "error.password.missing_uper": "A senha deve conter ao menos uma letra maiúscula",
   "error.password.missing_symbol": "A senha deve conter ao menos um caractere especial",
-  "error.password.too_short": "A senha deve ter no mínimo 8 caracteres"
+  "error.password.too_short": "A senha deve ter no mínimo 8 caracteres",
+  "error.password.required": "Senha obrigatória",
+
+  "error.login.invalid_credentials": "Email ou senha inválido",
+  "error.login.failed": "Falha ao realizar login"
 }

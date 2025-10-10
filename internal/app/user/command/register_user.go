@@ -13,14 +13,12 @@ type RegisterUserCommand struct {
 }
 
 type RegisterUserHandler struct {
-	repo             domain.UserRepository
-	encryptSecretKey string
+	repo domain.UserRepository
 }
 
-func NewRegisteUserHandler(repo domain.UserRepository, secretKey string) *RegisterUserHandler {
+func NewRegisterUserHandler(repo domain.UserRepository) *RegisterUserHandler {
 	return &RegisterUserHandler{
-		repo:             repo,
-		encryptSecretKey: secretKey,
+		repo: repo,
 	}
 }
 

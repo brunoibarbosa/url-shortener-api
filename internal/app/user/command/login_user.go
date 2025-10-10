@@ -7,6 +7,7 @@ import (
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -20,6 +21,13 @@ type LoginUserHandler struct {
 	encryptSecretKey string
 }
 
+type LoginUserResult struct {
+	Token     string
+	ExpiresAt time.Time
+	UserID    uuid.UUID
+	Email     string
+}
+
 func NewLoginUserHandler(repo domain.UserRepository, secretKey string) *LoginUserHandler {
 	return &LoginUserHandler{
 		repo:             repo,
@@ -27,18 +35,18 @@ func NewLoginUserHandler(repo domain.UserRepository, secretKey string) *LoginUse
 	}
 }
 
-func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (string, error) {
+func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (*LoginUserResult, error) {
 	u, err := h.repo.GetByEmail(ctx, cmd.Email)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if u.PasswordHash == nil {
-		return "", errors.New("user has no password (social login only)")
+		return nil, errors.New("user has no password (social login only)")
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(*u.PasswordHash), []byte(cmd.Password)) != nil {
-		return "", err
+		return nil, domain.ErrInvalidCredentials
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -46,5 +54,18 @@ func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (st
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	})
 
-	return token.SignedString(h.encryptSecretKey)
+	sToken, err := token.SignedString([]byte(h.encryptSecretKey))
+
+	if err != nil {
+		return nil, err
+	}
+
+	expiration := time.Now().Add(24 * time.Hour)
+
+	return &LoginUserResult{
+		Token:     sToken,
+		ExpiresAt: expiration,
+		UserID:    u.ID,
+		Email:     u.Email,
+	}, nil
 }
