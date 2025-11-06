@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
-	pg_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg"
+	pg_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg/url"
 	"github.com/robfig/cron/v3"
 )
 

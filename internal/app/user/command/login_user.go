@@ -2,12 +2,8 @@ package command
 
 import (
 	"context"
-	"time"
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type LoginUserCommand struct {
@@ -16,55 +12,43 @@ type LoginUserCommand struct {
 }
 
 type LoginUserHandler struct {
-	repo             domain.UserRepository
-	encryptSecretKey string
+	providerRepo  domain.UserProviderRepository
+	tokenService  domain.TokenService
+	passwordCheck func(hash, plain string) bool
 }
 
-type LoginUserResult struct {
-	Token     string
-	ExpiresAt time.Time
-	UserID    uuid.UUID
-	Email     string
-}
-
-func NewLoginUserHandler(repo domain.UserRepository, secretKey string) *LoginUserHandler {
+func NewLoginUserHandler(
+	providerRepo domain.UserProviderRepository,
+	tokenService domain.TokenService,
+	passwordCheck func(hash, plain string) bool,
+) *LoginUserHandler {
 	return &LoginUserHandler{
-		repo:             repo,
-		encryptSecretKey: secretKey,
+		providerRepo,
+		tokenService,
+		passwordCheck,
 	}
 }
 
-func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (*LoginUserResult, error) {
-	u, err := h.repo.GetByEmail(ctx, cmd.Email)
+func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (string, error) {
+	u, err := h.providerRepo.Find(ctx, "password", cmd.Email)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	if u.PasswordHash == nil {
-		return nil, domain.ErrSocialLoginOnly
+	if u == nil {
+		return "", domain.ErrInvalidCredentials
 	}
 
-	if bcrypt.CompareHashAndPassword([]byte(*u.PasswordHash), []byte(cmd.Password)) != nil {
-		return nil, domain.ErrInvalidCredentials
+	if !h.passwordCheck(cmd.Password, *u.PasswordHash) {
+		return "", domain.ErrInvalidCredentials
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": u.ID,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+	token, err := h.tokenService.GenerateAccessToken(&domain.TokenParams{
+		UserID: u.UserID,
 	})
-
-	sToken, err := token.SignedString([]byte(h.encryptSecretKey))
-
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	expiration := time.Now().Add(24 * time.Hour)
-
-	return &LoginUserResult{
-		Token:     sToken,
-		ExpiresAt: expiration,
-		UserID:    u.ID,
-		Email:     u.Email,
-	}, nil
+	return token, nil
 }

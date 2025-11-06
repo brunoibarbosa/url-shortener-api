@@ -20,28 +20,38 @@ var (
 )
 
 type User struct {
-	ID           uuid.UUID
-	Email        string
-	PasswordHash *string
-	CreatedAt    time.Time
-	UpdatedAt    *time.Time
+	ID        uuid.UUID
+	Email     string
+	Profile   *UserProfile
+	CreatedAt time.Time
+	UpdatedAt *time.Time
 }
 
 type UserProfile struct {
 	ID        int64
-	UserID    int64
 	Name      string
-	AvatarURL string
-	Phone     string
-	BirthDate *time.Time
+	AvatarURL *string
 }
 
 type UserProvider struct {
 	ID           int64
-	UserID       int64
+	UserID       uuid.UUID
 	Provider     string
 	ProviderID   string
-	AccessToken  string
-	RefreshToken string
+	PasswordHash *string
+}
+
+type UserSession struct {
+	ID           int64
+	UserID       uuid.UUID
+	RefreshToken uuid.UUID
+	UserAgent    *string
+	IPAddress    *string
+	ExpiresAt    *time.Time
+	RevokedAt    *time.Time
 	CreatedAt    time.Time
+}
+
+func (s *UserSession) IsExpired() bool {
+	return time.Now().After(*s.ExpiresAt)
 }

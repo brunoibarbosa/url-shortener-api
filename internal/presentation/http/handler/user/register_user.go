@@ -19,12 +19,18 @@ import (
 type RegisterUserPayload struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	Name     string `json:"name"`
+}
+
+type RegisterUserProfile201Response struct {
+	Name string `json:"name"`
 }
 
 type RegisterUser201Response struct {
-	ID        uuid.UUID `json:"id"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID        uuid.UUID                      `json:"id"`
+	Email     string                         `json:"email"`
+	CreatedAt time.Time                      `json:"createdAt"`
+	Profile   RegisterUserProfile201Response `json:"profile"`
 }
 
 type RegisterUserHTTPHandler struct {
@@ -45,7 +51,7 @@ func (h *RegisterUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 		return nil, validationErr
 	}
 
-	appCmd := command.RegisterUserCommand{Email: payload.Email, Password: payload.Password}
+	appCmd := command.RegisterUserCommand{Email: payload.Email, Password: payload.Password, Name: payload.Name}
 	user, handleErr := h.cmd.Handle(r.Context(), appCmd)
 	if handleErr != nil {
 		switch {
@@ -57,8 +63,11 @@ func (h *RegisterUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	}
 
 	response := RegisterUser201Response{
-		ID:        user.ID,
-		Email:     user.Email,
+		ID:    user.ID,
+		Email: user.Email,
+		Profile: RegisterUserProfile201Response{
+			Name: user.Profile.Name,
+		},
 		CreatedAt: user.CreatedAt,
 	}
 

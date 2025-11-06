@@ -6,8 +6,8 @@ import (
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
 	http_router "github.com/brunoibarbosa/url-shortener/internal/infra/presentation/http"
-	pg_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg"
-	redis_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/redis"
+	pg_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg/url"
+	redis_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/redis/url"
 	handler "github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler/url"
 	"github.com/redis/go-redis/v9"
 )

@@ -4,9 +4,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name TEXT,
-    avatar_url TEXT,
-    phone TEXT,
-    birth_date DATE
+    avatar_url TEXT
 );
 -- +goose StatementEnd
 

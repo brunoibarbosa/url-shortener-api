@@ -6,7 +6,6 @@ import (
 	err "errors"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/user/command"
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
@@ -27,10 +26,7 @@ type UserPayload struct {
 }
 
 type LoginUser200Response struct {
-	AccessToken string      `json:"accessToken"`
-	TokenType   string      `json:"tokenType"`
-	ExpiresIn   int64       `json:"expiresIn"`
-	User        UserPayload `json:"user"`
+	AccessToken string `json:"accessToken"`
 }
 
 type LoginUserHTTPHandler struct {
@@ -46,7 +42,7 @@ func NewLoginUserHTTPHandler(cmd *command.LoginUserHandler) *LoginUserHTTPHandle
 func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
 	ctx := r.Context()
 
-	payload, validationErr := validateLoginPayload(r, ctx)
+	payload, validationErr := validateLoginUserPayload(r, ctx)
 	if validationErr != nil {
 		return nil, validationErr
 	}
@@ -65,13 +61,7 @@ func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (h
 	}
 
 	response := LoginUser200Response{
-		AccessToken: token.Token,
-		TokenType:   "Bearer",
-		ExpiresIn:   int64(time.Until(token.ExpiresAt).Seconds()),
-		User: UserPayload{
-			ID:    token.UserID,
-			Email: token.Email,
-		},
+		AccessToken: token,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -83,7 +73,7 @@ func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (h
 	return nil, nil
 }
 
-func validateLoginPayload(r *http.Request, ctx context.Context) (LoginUserPayload, *handler.HTTPError) {
+func validateLoginUserPayload(r *http.Request, ctx context.Context) (LoginUserPayload, *handler.HTTPError) {
 	var payload LoginUserPayload
 	decodeErr := json.NewDecoder(r.Body).Decode(&payload)
 

@@ -2,12 +2,25 @@ package user
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type UserRepository interface {
 	Exists(ctx context.Context, email string) (bool, error)
-	CreateUser(ctx context.Context, email, passwordHash string) (*User, error)
-	CreateUserWithProvider(ctx context.Context, email, provider, providerID, accessToken, refreshToken string) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
-	GetByProvider(ctx context.Context, provider, providerID string) (*User, error)
+	Create(ctx context.Context, u *User) error
+}
+
+type UserProfileRepository interface {
+	Create(ctx context.Context, userID uuid.UUID, p *UserProfile) error
+}
+
+type UserProviderRepository interface {
+	Find(ctx context.Context, provider, providerID string) (*UserProvider, error)
+	Create(ctx context.Context, userID uuid.UUID, pv *UserProvider) error
+}
+
+type SessionRepository interface {
+	Create(ctx context.Context, u *UserSession) error
 }

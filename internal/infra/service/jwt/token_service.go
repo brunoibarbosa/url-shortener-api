@@ -1,0 +1,37 @@
+package jwt
+
+import (
+	"time"
+
+	"github.com/brunoibarbosa/url-shortener/internal/domain/user"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+)
+
+type TokenService struct {
+	secret string
+}
+
+func NewTokenService(secret string) *TokenService {
+	return &TokenService{secret: secret}
+}
+
+func (s *TokenService) GenerateAccessToken(params *user.TokenParams) (string, error) {
+	claims := jwt.MapClaims{
+		"sub": params.UserID.String(),
+		"exp": time.Now().Add(24 * time.Hour).Unix(),
+		"iat": time.Now().Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString([]byte(s.secret))
+	if err != nil {
+		return "", err
+	}
+
+	return signed, nil
+}
+
+func (s *TokenService) GenerateRefreshToken(params *user.TokenParams) uuid.UUID {
+	tokenID := uuid.New()
+	return tokenID
+}

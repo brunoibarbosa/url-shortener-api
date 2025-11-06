@@ -2,33 +2,49 @@ package command
 
 import (
 	"context"
+	"time"
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/google/uuid"
 )
 
 type RegisterUserCommand struct {
 	Email    string
 	Password string
+	Name     string
+}
+
+type RegisterUserResponse struct {
+	ID        uuid.UUID
+	Email     string
+	Profile   domain.UserProfile
+	CreatedAt time.Time
+	UpdatedAt *time.Time
 }
 
 type RegisterUserHandler struct {
-	repo domain.UserRepository
+	userRepo     domain.UserRepository
+	providerRepo domain.UserProviderRepository
+	profileRepo  domain.UserProfileRepository
+	hashPassword func(password string) (string, error)
 }
 
-func NewRegisterUserHandler(repo domain.UserRepository) *RegisterUserHandler {
+func NewRegisterUserHandler(userRepo domain.UserRepository, providerRepo domain.UserProviderRepository, profileRepo domain.UserProfileRepository, hashPassword func(password string) (string, error)) *RegisterUserHandler {
 	return &RegisterUserHandler{
-		repo: repo,
+		userRepo,
+		providerRepo,
+		profileRepo,
+		hashPassword,
 	}
 }
 
-func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserCommand) (*domain.User, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(cmd.Password), bcrypt.DefaultCost)
+func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserCommand) (*RegisterUserResponse, error) {
+	hash, err := h.hashPassword(cmd.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	exists, err := h.repo.Exists(ctx, cmd.Email)
+	exists, err := h.userRepo.Exists(ctx, cmd.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -37,5 +53,43 @@ func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserComman
 		return nil, domain.ErrEmailAlreadyExists
 	}
 
-	return h.repo.CreateUser(ctx, cmd.Email, string(hash))
+	// Cria o usuário
+	u := &domain.User{
+		Email: cmd.Email,
+	}
+	err = h.userRepo.Create(ctx, u)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cria o provider de senha
+	pv := &domain.UserProvider{
+		Provider:     "password",
+		ProviderID:   cmd.Email,
+		PasswordHash: &hash,
+	}
+	err = h.providerRepo.Create(ctx, u.ID, pv)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cria o perfil do usuário
+	pf := &domain.UserProfile{
+		Name: cmd.Name,
+	}
+	err = h.profileRepo.Create(ctx, u.ID, pf)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RegisterUserResponse{
+		ID:    u.ID,
+		Email: u.Email,
+		Profile: domain.UserProfile{
+			Name:      pf.Name,
+			AvatarURL: pf.AvatarURL,
+		},
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+	}, nil
 }

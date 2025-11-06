@@ -10,8 +10,10 @@ import (
 )
 
 type Environment struct {
-	URLSecret string
-	JWTSecret string
+	URLSecret    string
+	JWTSecret    string
+	GoogleID     string
+	GoogleSecret string
 
 	PostgresConn pg.PostgresConnection
 
@@ -36,8 +38,10 @@ func LoadAppConfig() AppConfig {
 
 	return AppConfig{
 		Env: Environment{
-			URLSecret: config.MustEnv("URL_SECRET"),
-			JWTSecret: config.MustEnv("JWT_SECRET"),
+			URLSecret:    config.MustEnv("URL_SECRET"),
+			JWTSecret:    config.MustEnv("JWT_SECRET"),
+			GoogleID:     config.MustEnv("GOOGLE_CLIENT_ID"),
+			GoogleSecret: config.MustEnv("GOOGLE_CLIENT_SECRET"),
 
 			PostgresConn: pg.PostgresConnection{
 				Host:     config.MustEnv("DB_HOST"),
