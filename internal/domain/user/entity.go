@@ -17,6 +17,7 @@ var (
 	ErrPasswordMissingLower  = errors.New("password must contain at least one lowercase letter")
 	ErrPasswordMissingDigit  = errors.New("password must contain at least one digit")
 	ErrPasswordMissingSymbol = errors.New("password must contain at least one special character")
+	ErrCreatingUser          = errors.New("error creating user")
 )
 
 type User struct {

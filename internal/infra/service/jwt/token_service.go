@@ -1,11 +1,16 @@
 package jwt
 
 import (
+	"errors"
 	"time"
 
 	"github.com/brunoibarbosa/url-shortener/internal/domain/user"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+)
+
+var (
+	ErrTokenGeneration = errors.New("token generation failed")
 )
 
 type TokenService struct {

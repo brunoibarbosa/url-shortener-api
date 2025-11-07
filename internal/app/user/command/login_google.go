@@ -2,10 +2,9 @@ package command
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
+	user "github.com/brunoibarbosa/url-shortener/internal/domain/user"
 )
 
 type LoginGoogleCommand struct {
@@ -20,14 +19,14 @@ type LoginGoogleCommand struct {
 }
 
 type LoginGoogleHandler struct {
-	provider     domain.OAuthProvider
-	userRepo     domain.UserRepository
-	providerRepo domain.UserProviderRepository
-	profileRepo  domain.UserProfileRepository
-	tokenService domain.TokenService
+	provider     user.OAuthProvider
+	userRepo     user.UserRepository
+	providerRepo user.UserProviderRepository
+	profileRepo  user.UserProfileRepository
+	tokenService user.TokenService
 }
 
-func NewLoginGoogleHandler(provider domain.OAuthProvider, userRepo domain.UserRepository, providerRepo domain.UserProviderRepository, profileRepo domain.UserProfileRepository, tokenService domain.TokenService) *LoginGoogleHandler {
+func NewLoginGoogleHandler(provider user.OAuthProvider, userRepo user.UserRepository, providerRepo user.UserProviderRepository, profileRepo user.UserProfileRepository, tokenService user.TokenService) *LoginGoogleHandler {
 	return &LoginGoogleHandler{
 		provider,
 		userRepo,
@@ -39,59 +38,59 @@ func NewLoginGoogleHandler(provider domain.OAuthProvider, userRepo domain.UserRe
 
 func (h *LoginGoogleHandler) Handle(ctx context.Context, code string) (string, error) {
 	provider := "google"
-	user, err := h.provider.ExchangeCode(ctx, code)
+	oauthUser, err := h.provider.ExchangeCode(ctx, code)
 	if err != nil {
-		return "", fmt.Errorf("error exchanging code: %w", err)
+		return "", err
 	}
 
-	existingProvider, err := h.providerRepo.Find(ctx, provider, user.ID)
+	existingProvider, err := h.providerRepo.Find(ctx, provider, oauthUser.ID)
 	if err != nil {
 		return "", err
 	}
 
 	if existingProvider != nil {
-		tp := &domain.TokenParams{
+		tp := &user.TokenParams{
 			UserID: existingProvider.UserID,
 		}
 		return h.tokenService.GenerateAccessToken(tp)
 	}
 
-	u, err := h.userRepo.GetByEmail(ctx, user.Email)
+	u, err := h.userRepo.GetByEmail(ctx, oauthUser.Email)
 	if err != nil || u == nil {
-		newUser := &domain.User{
-			Email:     user.Email,
+		newUser := &user.User{
+			Email:     oauthUser.Email,
 			CreatedAt: time.Now(),
 		}
 		if err := h.userRepo.Create(ctx, newUser); err != nil {
-			return "", fmt.Errorf("error creating user: %w", err)
+			return "", err
 		}
 		u = newUser
 	}
 
-	pv := &domain.UserProvider{
+	pv := &user.UserProvider{
 		UserID:     u.ID,
 		Provider:   provider,
-		ProviderID: user.ID,
+		ProviderID: oauthUser.ID,
 	}
 	if err := h.providerRepo.Create(ctx, u.ID, pv); err != nil {
-		return "", fmt.Errorf("error linking provider: %w", err)
+		return "", err
 	}
 
-	if u.Profile == nil && (user.Name != "") {
-		pf := &domain.UserProfile{
-			Name:      user.Name,
-			AvatarURL: user.AvatarURL,
+	if u.Profile == nil && (oauthUser.Name != "") {
+		pf := &user.UserProfile{
+			Name:      oauthUser.Name,
+			AvatarURL: oauthUser.AvatarURL,
 		}
 		if err := h.profileRepo.Create(ctx, u.ID, pf); err != nil {
-			return "", fmt.Errorf("error creating user: %w", err)
+			return "", err
 		}
 	}
 
-	token, err := h.tokenService.GenerateAccessToken(&domain.TokenParams{
+	token, err := h.tokenService.GenerateAccessToken(&user.TokenParams{
 		UserID: u.ID,
 	})
 	if err != nil {
-		return "", fmt.Errorf("token generation failed: %w", err)
+		return "", err
 	}
 
 	return token, nil

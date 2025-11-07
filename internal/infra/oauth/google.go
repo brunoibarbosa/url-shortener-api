@@ -3,11 +3,18 @@ package oauth_provider
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+)
+
+var (
+	ErrExchangingCode    = errors.New("error exchanging code")
+	ErrSearchProfileInfo = errors.New("failed to search profile")
+	ErrDecodeProfileInfo = errors.New("error decoding response")
 )
 
 type GoogleOAuth struct {
@@ -40,13 +47,13 @@ func (g *GoogleOAuth) GetAuthURL(state string) string {
 func (g *GoogleOAuth) ExchangeCode(ctx context.Context, code string) (*domain.OAuthUser, error) {
 	token, err := g.config.Exchange(ctx, code)
 	if err != nil {
-		return nil, fmt.Errorf("falha ao trocar código por token: %w", err)
+		return nil, ErrExchangingCode
 	}
 
 	client := g.config.Client(ctx, token)
 	res, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 	if err != nil {
-		return nil, fmt.Errorf("falha ao buscar perfil: %w", err)
+		return nil, ErrSearchProfileInfo
 	}
 	defer res.Body.Close()
 
@@ -57,7 +64,7 @@ func (g *GoogleOAuth) ExchangeCode(ctx context.Context, code string) (*domain.OA
 		AvatarURL *string `json:"picture"`
 	}
 	if err := json.NewDecoder(res.Body).Decode(&profile); err != nil {
-		return nil, fmt.Errorf("erro ao decodificar resposta: %w", err)
+		return nil, ErrDecodeProfileInfo
 	}
 
 	return &domain.OAuthUser{
