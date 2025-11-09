@@ -35,7 +35,7 @@ func (h *GetOriginalURLHandler) Handle(ctx context.Context, query GetOriginalURL
 		return "", err
 	}
 	if cachedUrl != nil {
-		decryptedUrl := crypto.Decrypt(cachedUrl.EncryptedURL, h.decryptSecretKey)
+		decryptedUrl := crypto.DecryptURL(cachedUrl.EncryptedURL, h.decryptSecretKey)
 		return decryptedUrl, nil
 	}
 
@@ -56,6 +56,6 @@ func (h *GetOriginalURLHandler) Handle(ctx context.Context, query GetOriginalURL
 	}
 	h.cacheRepo.Save(ctx, url, cacheDuration)
 
-	decryptedUrl := crypto.Decrypt(url.EncryptedURL, h.decryptSecretKey)
+	decryptedUrl := crypto.DecryptURL(url.EncryptedURL, h.decryptSecretKey)
 	return decryptedUrl, nil
 }

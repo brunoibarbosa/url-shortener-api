@@ -16,7 +16,8 @@ type OAuthUser struct {
 }
 
 type TokenParams struct {
-	UserID uuid.UUID
+	UserID    uuid.UUID
+	SessionID uuid.UUID
 }
 
 type OAuthProvider interface {
@@ -26,4 +27,5 @@ type OAuthProvider interface {
 
 type TokenService interface {
 	GenerateAccessToken(params *TokenParams) (string, error)
+	GenerateRefreshToken() uuid.UUID
 }

@@ -20,7 +20,3 @@ type UserProviderRepository interface {
 	Find(ctx context.Context, provider, providerID string) (*UserProvider, error)
 	Create(ctx context.Context, userID uuid.UUID, pv *UserProvider) error
 }
-
-type SessionRepository interface {
-	Create(ctx context.Context, u *UserSession) error
-}

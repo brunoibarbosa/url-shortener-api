@@ -5,6 +5,7 @@ import (
 	"time"
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
+	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
 	"github.com/google/uuid"
 )
 
@@ -26,20 +27,18 @@ type RegisterUserHandler struct {
 	userRepo     domain.UserRepository
 	providerRepo domain.UserProviderRepository
 	profileRepo  domain.UserProfileRepository
-	hashPassword func(password string) (string, error)
 }
 
-func NewRegisterUserHandler(userRepo domain.UserRepository, providerRepo domain.UserProviderRepository, profileRepo domain.UserProfileRepository, hashPassword func(password string) (string, error)) *RegisterUserHandler {
+func NewRegisterUserHandler(userRepo domain.UserRepository, providerRepo domain.UserProviderRepository, profileRepo domain.UserProfileRepository) *RegisterUserHandler {
 	return &RegisterUserHandler{
 		userRepo,
 		providerRepo,
 		profileRepo,
-		hashPassword,
 	}
 }
 
 func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserCommand) (*RegisterUserResponse, error) {
-	hash, err := h.hashPassword(cmd.Password)
+	hash, err := crypto.HashPassword(cmd.Password)
 	if err != nil {
 		return nil, err
 	}

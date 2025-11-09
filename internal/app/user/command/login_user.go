@@ -2,53 +2,75 @@ package command
 
 import (
 	"context"
+	"time"
 
-	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
+	"github.com/brunoibarbosa/url-shortener/internal/domain/session"
+	"github.com/brunoibarbosa/url-shortener/internal/domain/user"
+	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
 )
 
 type LoginUserCommand struct {
-	Email    string
-	Password string
+	Email     string
+	Password  string
+	UserAgent string
+	IPAddress string
 }
 
 type LoginUserHandler struct {
-	providerRepo  domain.UserProviderRepository
-	tokenService  domain.TokenService
-	passwordCheck func(hash, plain string) bool
+	providerRepo user.UserProviderRepository
+	sessionRepo  session.SessionRepository
+	tokenService user.TokenService
 }
 
 func NewLoginUserHandler(
-	providerRepo domain.UserProviderRepository,
-	tokenService domain.TokenService,
-	passwordCheck func(hash, plain string) bool,
+	providerRepo user.UserProviderRepository,
+	sessionRepo session.SessionRepository,
+	tokenService user.TokenService,
 ) *LoginUserHandler {
 	return &LoginUserHandler{
 		providerRepo,
+		sessionRepo,
 		tokenService,
-		passwordCheck,
 	}
 }
 
-func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (string, error) {
+func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (string, string, error) {
 	u, err := h.providerRepo.Find(ctx, "password", cmd.Email)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	if u == nil {
-		return "", domain.ErrInvalidCredentials
+		return "", "", user.ErrInvalidCredentials
 	}
 
-	if !h.passwordCheck(cmd.Password, *u.PasswordHash) {
-		return "", domain.ErrInvalidCredentials
+	if !crypto.CheckPassword(cmd.Password, *u.PasswordHash) {
+		return "", "", user.ErrInvalidCredentials
 	}
 
-	token, err := h.tokenService.GenerateAccessToken(&domain.TokenParams{
-		UserID: u.UserID,
+	refreshToken := h.tokenService.GenerateRefreshToken()
+	refreshHash := crypto.HashRefreshToken(refreshToken.String())
+
+	expiresAt := time.Now().Add(30 * 24 * time.Hour)
+
+	sess := &session.Session{
+		UserID:           u.UserID,
+		RefreshTokenHash: refreshHash,
+		UserAgent:        cmd.UserAgent,
+		IPAddress:        cmd.IPAddress,
+		ExpiresAt:        &expiresAt,
+	}
+	if err := h.sessionRepo.Create(ctx, sess); err != nil {
+		return "", "", err
+	}
+
+	accessToken, err := h.tokenService.GenerateAccessToken(&user.TokenParams{
+		UserID:    u.UserID,
+		SessionID: sess.ID,
 	})
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return token, nil
+	return accessToken, refreshToken.String(), nil
 }

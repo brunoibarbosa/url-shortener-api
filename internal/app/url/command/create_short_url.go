@@ -56,7 +56,7 @@ func (h *CreateShortURLHandler) Handle(ctx context.Context, cmd CreateShortURLCo
 			continue
 		}
 
-		encryptedUrl := crypto.Encrypt(cmd.OriginalURL, h.encryptSecretKey)
+		encryptedUrl := crypto.EncryptURL(cmd.OriginalURL, h.encryptSecretKey)
 		expiresAt := time.Now().Add(h.persistExpirationDuration)
 		u := &domain.URL{
 			ShortCode:    shortCode,

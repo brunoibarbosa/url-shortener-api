@@ -7,10 +7,10 @@ import (
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
 	oauth_provider "github.com/brunoibarbosa/url-shortener/internal/infra/oauth"
 	http_router "github.com/brunoibarbosa/url-shortener/internal/infra/presentation/http"
-	pg_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg/user"
+	pg_session_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg/session"
+	pg_user_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg/user"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/service/jwt"
 	handler "github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler/user"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type UserRoutesConfig struct {
@@ -21,17 +21,18 @@ type UserRoutesConfig struct {
 }
 
 func SetupUserRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, config UserRoutesConfig) {
-	userRepo := pg_repo.NewUserRepository(pgConn)
-	providerRepo := pg_repo.NewUserProviderRepository(pgConn)
-	profileRepo := pg_repo.NewUserProfileRepository(pgConn)
+	userRepo := pg_user_repo.NewUserRepository(pgConn)
+	providerRepo := pg_user_repo.NewUserProviderRepository(pgConn)
+	profileRepo := pg_user_repo.NewUserProfileRepository(pgConn)
+	sessionRepo := pg_session_repo.NewSessionRepository(pgConn)
 
 	provider := oauth_provider.NewGoogleOAuth(config.GoogleID, config.GoogleSecret, fmt.Sprintf("http://%s", config.ListenAddress))
 	tokenService := jwt.NewTokenService(config.JWTSecret)
 
-	registerHandler := command.NewRegisterUserHandler(userRepo, providerRepo, profileRepo, hashPassword)
+	registerHandler := command.NewRegisterUserHandler(userRepo, providerRepo, profileRepo)
 	registerHTTPHandler := handler.NewRegisterUserHTTPHandler(registerHandler)
 
-	loginUserHandler := command.NewLoginUserHandler(providerRepo, tokenService, checkPasswordHash)
+	loginUserHandler := command.NewLoginUserHandler(providerRepo, sessionRepo, tokenService)
 	loginUserHTTPHandler := handler.NewLoginUserHTTPHandler(loginUserHandler)
 
 	redirectGoogleHandler := command.NewRedirectGoogleHandler(provider)
@@ -45,14 +46,4 @@ func SetupUserRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, config UserR
 
 	r.Get("/auth/google", redirectGoogleHTTPHandler.Handle)
 	r.Get("/auth/google/callback", loginGoogleHTTPHandler.Handle)
-}
-
-func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
-}
-
-func checkPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
 }

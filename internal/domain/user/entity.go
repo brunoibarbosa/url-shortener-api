@@ -41,18 +41,3 @@ type UserProvider struct {
 	ProviderID   string
 	PasswordHash *string
 }
-
-type UserSession struct {
-	ID           int64
-	UserID       uuid.UUID
-	RefreshToken uuid.UUID
-	UserAgent    *string
-	IPAddress    *string
-	ExpiresAt    *time.Time
-	RevokedAt    *time.Time
-	CreatedAt    time.Time
-}
-
-func (s *UserSession) IsExpired() bool {
-	return time.Now().After(*s.ExpiresAt)
-}

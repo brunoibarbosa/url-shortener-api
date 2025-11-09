@@ -27,7 +27,7 @@ func (r *UserProfileRepository) Create(ctx context.Context, userID uuid.UUID, pv
 	}
 
 	_, err = tx.Exec(ctx,
-		"INSERT INTO user_profiles (user_id, name, avatar_url) VALUES ($1, $2, $3) RETURNING id",
+		"INSERT INTO user_profiles (user_id, name, avatar_url) VALUES ($1, $2, $3)",
 		userID, pv.Name, pv.AvatarURL,
 	)
 

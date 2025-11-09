@@ -24,6 +24,7 @@ func NewTokenService(secret string) *TokenService {
 func (s *TokenService) GenerateAccessToken(params *user.TokenParams) (string, error) {
 	claims := jwt.MapClaims{
 		"sub": params.UserID.String(),
+		"sid": params.SessionID.String(),
 		"exp": time.Now().Add(24 * time.Hour).Unix(),
 		"iat": time.Now().Unix(),
 	}
@@ -36,7 +37,7 @@ func (s *TokenService) GenerateAccessToken(params *user.TokenParams) (string, er
 	return signed, nil
 }
 
-func (s *TokenService) GenerateRefreshToken(params *user.TokenParams) uuid.UUID {
+func (s *TokenService) GenerateRefreshToken() uuid.UUID {
 	tokenID := uuid.New()
 	return tokenID
 }

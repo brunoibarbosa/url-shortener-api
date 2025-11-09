@@ -6,6 +6,7 @@ import (
 	err "errors"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/user/command"
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
@@ -47,8 +48,13 @@ func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (h
 		return nil, validationErr
 	}
 
-	appCmd := command.LoginUserCommand{Email: payload.Email, Password: payload.Password}
-	token, handleErr := h.cmd.Handle(r.Context(), appCmd)
+	appCmd := command.LoginUserCommand{
+		Email:     payload.Email,
+		Password:  payload.Password,
+		UserAgent: r.UserAgent(),
+		IPAddress: r.RemoteAddr,
+	}
+	accessToken, refreshToken, handleErr := h.cmd.Handle(r.Context(), appCmd)
 	if handleErr != nil {
 		switch {
 		case err.Is(handleErr, domain.ErrInvalidCredentials):
@@ -60,8 +66,18 @@ func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (h
 		}
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Path:     "/auth/refresh",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   int(30 * 24 * time.Hour / time.Second),
+	})
+
 	response := LoginUser200Response{
-		AccessToken: token,
+		AccessToken: accessToken,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

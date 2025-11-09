@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-func Encrypt(original string, secretKey string) string {
+func EncryptURL(original string, secretKey string) string {
 	block, err := aes.NewCipher([]byte(secretKey))
 	if err != nil {
 		log.Fatal(err)
@@ -29,7 +29,7 @@ func Encrypt(original string, secretKey string) string {
 	return hex.EncodeToString(cipherText)
 }
 
-func Decrypt(encrypted string, secretKey string) string {
+func DecryptURL(encrypted string, secretKey string) string {
 	block, err := aes.NewCipher([]byte(secretKey))
 	if err != nil {
 		log.Fatal(err)
