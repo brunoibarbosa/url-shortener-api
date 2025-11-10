@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/brunoibarbosa/url-shortener/internal/app/user/command"
+	"github.com/brunoibarbosa/url-shortener/internal/app/auth/command"
 	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 )
@@ -28,14 +28,12 @@ func (h *LoginGoogleHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) 
 
 	code := r.URL.Query().Get("code")
 	if code == "" {
-		http.Error(w, "missing code", http.StatusBadRequest)
-		return nil, handler.NewHTTPError(http.StatusBadRequest, "missing code", "erro")
+		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.login.failed", nil)
 	}
 
 	token, err := h.cmd.Handle(ctx, code)
 	if err != nil {
-		http.Error(w, "failed to login", http.StatusUnauthorized)
-		return nil, handler.NewHTTPError(http.StatusUnauthorized, "failed to login", "error")
+		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.login.failed", nil)
 	}
 
 	response := LoginGoogle200Response{

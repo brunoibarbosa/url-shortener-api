@@ -3,7 +3,7 @@ package command
 import (
 	"context"
 
-	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
+	domain "github.com/brunoibarbosa/url-shortener/internal/domain/session"
 )
 
 type RedirectGoogleHandler struct {

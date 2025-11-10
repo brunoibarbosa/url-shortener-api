@@ -1,9 +1,14 @@
-package user
+package session
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
+)
+
+var (
+	ErrTokenGenerate = errors.New("failed to generate token")
 )
 
 type OAuthUser struct {

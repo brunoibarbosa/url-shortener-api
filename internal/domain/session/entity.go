@@ -1,9 +1,14 @@
 package session
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
+)
+
+var (
+	ErrInvalidRefreshToken = errors.New("invalid or expired refresh token")
 )
 
 type Session struct {

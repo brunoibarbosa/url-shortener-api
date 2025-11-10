@@ -27,14 +27,6 @@ func (e *HTTPError) Error() string {
 	return e.Message
 }
 
-func NewHTTPError(status int, code, message string) *HTTPError {
-	return &HTTPError{
-		Status:  status,
-		Code:    code,
-		Message: message,
-	}
-}
-
 func NewI18nHTTPError(ctx context.Context, status int, code, messageID string, data map[string]interface{}) *HTTPError {
 	return &HTTPError{
 		Status:  status,

@@ -19,13 +19,13 @@ type LoginUserCommand struct {
 type LoginUserHandler struct {
 	providerRepo user.UserProviderRepository
 	sessionRepo  session.SessionRepository
-	tokenService user.TokenService
+	tokenService session.TokenService
 }
 
 func NewLoginUserHandler(
 	providerRepo user.UserProviderRepository,
 	sessionRepo session.SessionRepository,
-	tokenService user.TokenService,
+	tokenService session.TokenService,
 ) *LoginUserHandler {
 	return &LoginUserHandler{
 		providerRepo,
@@ -64,7 +64,7 @@ func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (st
 		return "", "", err
 	}
 
-	accessToken, err := h.tokenService.GenerateAccessToken(&user.TokenParams{
+	accessToken, err := h.tokenService.GenerateAccessToken(&session.TokenParams{
 		UserID:    u.UserID,
 		SessionID: sess.ID,
 	})

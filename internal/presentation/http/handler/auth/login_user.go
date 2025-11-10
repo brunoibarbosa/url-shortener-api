@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/app/user/command"
+	"github.com/brunoibarbosa/url-shortener/internal/app/auth/command"
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
 	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
 	"github.com/brunoibarbosa/url-shortener/internal/validation"

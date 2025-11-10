@@ -8,6 +8,7 @@ import (
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/session"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -42,7 +43,7 @@ func (r *SessionRepository) Create(ctx context.Context, s *domain.Session) error
 	return tx.Commit(ctx)
 }
 
-func (r *SessionRepository) FindByRefresh(ctx context.Context, hash string) (*domain.Session, error) {
+func (r *SessionRepository) FindByRefreshToken(ctx context.Context, hash string) (*domain.Session, error) {
 	row := r.db.Pool.QueryRow(ctx,
 		`SELECT id, user_id, refresh_token_hash, user_agent, ip_address, expires_at, revoked_at 
 		 FROM sessions 
@@ -63,7 +64,7 @@ func (r *SessionRepository) FindByRefresh(ctx context.Context, hash string) (*do
 	return s, nil
 }
 
-func (r *SessionRepository) Revoke(ctx context.Context, id string) error {
+func (r *SessionRepository) Revoke(ctx context.Context, id uuid.UUID) error {
 	tx, err := r.db.Pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		tx.Rollback(ctx)

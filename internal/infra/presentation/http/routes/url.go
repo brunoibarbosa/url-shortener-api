@@ -28,6 +28,6 @@ func SetupURLRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, redisClient *
 	createHTTPHandler := handler.NewCreateShortURLHTTPHandler(createHandler)
 	redirectHTTPHandler := handler.NewRedirectHTTPHandler(getHandler)
 
-	r.Post("/shorten", createHTTPHandler.Handle)
+	r.Post("/url/shorten", createHTTPHandler.Handle)
 	r.Get("/{shortCode}", redirectHTTPHandler.Handle)
 }

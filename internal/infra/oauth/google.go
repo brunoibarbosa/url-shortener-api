@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
+	session "github.com/brunoibarbosa/url-shortener/internal/domain/session"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
@@ -44,7 +44,7 @@ func (g *GoogleOAuth) GetAuthURL(state string) string {
 	)
 }
 
-func (g *GoogleOAuth) ExchangeCode(ctx context.Context, code string) (*domain.OAuthUser, error) {
+func (g *GoogleOAuth) ExchangeCode(ctx context.Context, code string) (*session.OAuthUser, error) {
 	token, err := g.config.Exchange(ctx, code)
 	if err != nil {
 		return nil, ErrExchangingCode
@@ -67,7 +67,7 @@ func (g *GoogleOAuth) ExchangeCode(ctx context.Context, code string) (*domain.OA
 		return nil, ErrDecodeProfileInfo
 	}
 
-	return &domain.OAuthUser{
+	return &session.OAuthUser{
 		ID:           profile.ID,
 		Name:         profile.Name,
 		Email:        profile.Email,

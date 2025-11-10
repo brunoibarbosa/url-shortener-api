@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	session "github.com/brunoibarbosa/url-shortener/internal/domain/session"
 	user "github.com/brunoibarbosa/url-shortener/internal/domain/user"
 )
 
@@ -19,14 +20,14 @@ type LoginGoogleCommand struct {
 }
 
 type LoginGoogleHandler struct {
-	provider     user.OAuthProvider
+	provider     session.OAuthProvider
 	userRepo     user.UserRepository
 	providerRepo user.UserProviderRepository
 	profileRepo  user.UserProfileRepository
-	tokenService user.TokenService
+	tokenService session.TokenService
 }
 
-func NewLoginGoogleHandler(provider user.OAuthProvider, userRepo user.UserRepository, providerRepo user.UserProviderRepository, profileRepo user.UserProfileRepository, tokenService user.TokenService) *LoginGoogleHandler {
+func NewLoginGoogleHandler(provider session.OAuthProvider, userRepo user.UserRepository, providerRepo user.UserProviderRepository, profileRepo user.UserProfileRepository, tokenService session.TokenService) *LoginGoogleHandler {
 	return &LoginGoogleHandler{
 		provider,
 		userRepo,
@@ -49,7 +50,7 @@ func (h *LoginGoogleHandler) Handle(ctx context.Context, code string) (string, e
 	}
 
 	if existingProvider != nil {
-		tp := &user.TokenParams{
+		tp := &session.TokenParams{
 			UserID: existingProvider.UserID,
 		}
 		return h.tokenService.GenerateAccessToken(tp)
@@ -86,7 +87,7 @@ func (h *LoginGoogleHandler) Handle(ctx context.Context, code string) (string, e
 		}
 	}
 
-	token, err := h.tokenService.GenerateAccessToken(&user.TokenParams{
+	token, err := h.tokenService.GenerateAccessToken(&session.TokenParams{
 		UserID: u.ID,
 	})
 	if err != nil {

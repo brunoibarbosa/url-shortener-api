@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/brunoibarbosa/url-shortener/internal/app/user/command"
+	"github.com/brunoibarbosa/url-shortener/internal/app/auth/command"
 	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
 )
 
