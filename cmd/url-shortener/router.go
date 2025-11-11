@@ -20,7 +20,7 @@ func getRouter(postgres *pg.Postgres, redisClient *redis.Client, appConfig AppCo
 		URLPersistExpirationDuration: appConfig.Env.URLPersistExpirationDuration,
 		URLCacheExpirationDuration:   appConfig.Env.URLCacheExpirationDuration,
 	})
-	http.SetupAuthRoutes(r, postgres, http.AuthRoutesConfig{
+	http.SetupAuthRoutes(r, postgres, redisClient, http.AuthRoutesConfig{
 		JWTSecret:     appConfig.Env.JWTSecret,
 		GoogleID:      appConfig.Env.GoogleID,
 		GoogleSecret:  appConfig.Env.GoogleSecret,

@@ -15,16 +15,19 @@ type RefreshTokenCommand struct {
 }
 
 type RefreshTokenHandler struct {
-	sessionRepo  session.SessionRepository
-	tokenService session.TokenService
+	sessionRepo   session.SessionRepository
+	blacklistRepo session.BlacklistRepository
+	tokenService  session.TokenService
 }
 
 func NewRefreshTokenHandler(
 	sessionRepo session.SessionRepository,
+	blacklistRepo session.BlacklistRepository,
 	tokenService session.TokenService,
 ) *RefreshTokenHandler {
 	return &RefreshTokenHandler{
 		sessionRepo,
+		blacklistRepo,
 		tokenService,
 	}
 }
@@ -37,7 +40,18 @@ func (h *RefreshTokenHandler) Handle(ctx context.Context, cmd RefreshTokenComman
 		return "", "", session.ErrInvalidRefreshToken
 	}
 
+	revoked, err := h.blacklistRepo.IsRevoked(ctx, hashed)
+	if err != nil {
+		return "", "", err
+	}
+	if revoked {
+		return "", "", session.ErrInvalidRefreshToken
+	}
+
 	_ = h.sessionRepo.Revoke(ctx, s.ID)
+
+	remainder := time.Until(*s.ExpiresAt)
+	_ = h.blacklistRepo.Revoke(ctx, hashed, remainder)
 
 	refreshToken := h.tokenService.GenerateRefreshToken()
 	refreshHash := crypto.HashRefreshToken(refreshToken.String())
