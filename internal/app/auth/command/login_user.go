@@ -17,20 +17,26 @@ type LoginUserCommand struct {
 }
 
 type LoginUserHandler struct {
-	providerRepo user.UserProviderRepository
-	sessionRepo  session.SessionRepository
-	tokenService session.TokenService
+	providerRepo         user.UserProviderRepository
+	sessionRepo          session.SessionRepository
+	tokenService         session.TokenService
+	refreshTokenDuration time.Duration
+	accessTokenDuration  time.Duration
 }
 
 func NewLoginUserHandler(
 	providerRepo user.UserProviderRepository,
 	sessionRepo session.SessionRepository,
 	tokenService session.TokenService,
+	refreshTokenDuration time.Duration,
+	accessTokenDuration time.Duration,
 ) *LoginUserHandler {
 	return &LoginUserHandler{
 		providerRepo,
 		sessionRepo,
 		tokenService,
+		refreshTokenDuration,
+		accessTokenDuration,
 	}
 }
 
@@ -51,7 +57,7 @@ func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (st
 	refreshToken := h.tokenService.GenerateRefreshToken()
 	refreshHash := crypto.HashRefreshToken(refreshToken.String())
 
-	expiresAt := time.Now().Add(30 * 24 * time.Hour)
+	expiresAt := time.Now().Add(h.refreshTokenDuration)
 
 	sess := &session.Session{
 		UserID:           u.UserID,
@@ -67,6 +73,7 @@ func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (st
 	accessToken, err := h.tokenService.GenerateAccessToken(&session.TokenParams{
 		UserID:    u.UserID,
 		SessionID: sess.ID,
+		Duration:  h.accessTokenDuration,
 	})
 	if err != nil {
 		return "", "", err

@@ -31,12 +31,14 @@ type LoginUser200Response struct {
 }
 
 type LoginUserHTTPHandler struct {
-	cmd *command.LoginUserHandler
+	cmd                  *command.LoginUserHandler
+	refreshTokenDuration time.Duration
 }
 
-func NewLoginUserHTTPHandler(cmd *command.LoginUserHandler) *LoginUserHTTPHandler {
+func NewLoginUserHTTPHandler(cmd *command.LoginUserHandler, refreshTokenDuration time.Duration) *LoginUserHTTPHandler {
 	return &LoginUserHTTPHandler{
-		cmd: cmd,
+		cmd,
+		refreshTokenDuration,
 	}
 }
 
@@ -69,11 +71,11 @@ func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (h
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken,
-		Path:     "/auth/refresh",
+		Path:     "/",
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
-		MaxAge:   int(30 * 24 * time.Hour / time.Second),
+		MaxAge:   int(h.refreshTokenDuration.Seconds()),
 	})
 
 	response := LoginUser200Response{

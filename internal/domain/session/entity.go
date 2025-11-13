@@ -9,6 +9,8 @@ import (
 
 var (
 	ErrInvalidRefreshToken = errors.New("invalid or expired refresh token")
+	ErrNotFound            = errors.New("session not found")
+	ErrRevokeFailed        = errors.New("failed to revoke token")
 )
 
 type Session struct {
@@ -23,5 +25,5 @@ type Session struct {
 }
 
 func (s *Session) IsExpired() bool {
-	return time.Now().After(*s.ExpiresAt)
+	return time.Now().After(*s.ExpiresAt) || s.RevokedAt != nil
 }

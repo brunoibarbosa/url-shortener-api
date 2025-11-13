@@ -13,7 +13,7 @@ type RedirectGoogleHTTPHandler struct {
 
 func NewRedirectGoogleHTTPHandler(cmd *command.RedirectGoogleHandler) *RedirectGoogleHTTPHandler {
 	return &RedirectGoogleHTTPHandler{
-		cmd: cmd,
+		cmd,
 	}
 }
 

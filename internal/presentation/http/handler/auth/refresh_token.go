@@ -14,7 +14,7 @@ import (
 )
 
 type RefreshTokenPayload struct {
-	RefreshToken string `json:"refresh_token"`
+	RefreshToken string
 }
 
 type RefreshToken200Response struct {
@@ -22,12 +22,14 @@ type RefreshToken200Response struct {
 }
 
 type RefreshTokenHTTPHandler struct {
-	cmd *command.RefreshTokenHandler
+	cmd                  *command.RefreshTokenHandler
+	refreshTokenDuration time.Duration
 }
 
-func NewRefreshTokenHTTPHandler(cmd *command.RefreshTokenHandler) *RefreshTokenHTTPHandler {
+func NewRefreshTokenHTTPHandler(cmd *command.RefreshTokenHandler, refreshTokenDuration time.Duration) *RefreshTokenHTTPHandler {
 	return &RefreshTokenHTTPHandler{
-		cmd: cmd,
+		cmd,
+		refreshTokenDuration,
 	}
 }
 
@@ -48,7 +50,7 @@ func (h *RefreshTokenHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	if handleErr != nil {
 		switch {
 		case err.Is(handleErr, sd.ErrInvalidRefreshToken):
-			return nil, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.login.invalid_refresh_token", nil)
+			return nil, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.session.invalid_refresh_token", nil)
 		case err.Is(handleErr, sd.ErrTokenGenerate):
 			return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.session.generate_refresh_token", nil)
 		default:
@@ -59,11 +61,11 @@ func (h *RefreshTokenHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    refreshToken,
-		Path:     "/auth/refresh",
+		Path:     "/",
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
-		MaxAge:   int(30 * 24 * time.Hour / time.Second),
+		MaxAge:   int(h.refreshTokenDuration.Seconds()),
 	})
 
 	response := RefreshToken200Response{

@@ -15,20 +15,26 @@ type RefreshTokenCommand struct {
 }
 
 type RefreshTokenHandler struct {
-	sessionRepo   session.SessionRepository
-	blacklistRepo session.BlacklistRepository
-	tokenService  session.TokenService
+	sessionRepo          session.SessionRepository
+	blacklistRepo        session.BlacklistRepository
+	tokenService         session.TokenService
+	refreshTokenDuration time.Duration
+	accessTokenDuration  time.Duration
 }
 
 func NewRefreshTokenHandler(
 	sessionRepo session.SessionRepository,
 	blacklistRepo session.BlacklistRepository,
 	tokenService session.TokenService,
+	refreshTokenDuration time.Duration,
+	accessTokenDuration time.Duration,
 ) *RefreshTokenHandler {
 	return &RefreshTokenHandler{
 		sessionRepo,
 		blacklistRepo,
 		tokenService,
+		refreshTokenDuration,
+		accessTokenDuration,
 	}
 }
 
@@ -48,7 +54,9 @@ func (h *RefreshTokenHandler) Handle(ctx context.Context, cmd RefreshTokenComman
 		return "", "", session.ErrInvalidRefreshToken
 	}
 
-	_ = h.sessionRepo.Revoke(ctx, s.ID)
+	if err := h.sessionRepo.Revoke(ctx, s.ID); err != nil {
+		return "", "", err
+	}
 
 	remainder := time.Until(*s.ExpiresAt)
 	_ = h.blacklistRepo.Revoke(ctx, hashed, remainder)
@@ -56,7 +64,7 @@ func (h *RefreshTokenHandler) Handle(ctx context.Context, cmd RefreshTokenComman
 	refreshToken := h.tokenService.GenerateRefreshToken()
 	refreshHash := crypto.HashRefreshToken(refreshToken.String())
 
-	expiresAt := time.Now().Add(30 * 24 * time.Hour)
+	expiresAt := time.Now().Add(h.refreshTokenDuration)
 
 	sess := &session.Session{
 		UserID:           s.UserID,
@@ -72,6 +80,7 @@ func (h *RefreshTokenHandler) Handle(ctx context.Context, cmd RefreshTokenComman
 	accessToken, err := h.tokenService.GenerateAccessToken(&session.TokenParams{
 		UserID:    s.UserID,
 		SessionID: sess.ID,
+		Duration:  h.accessTokenDuration,
 	})
 	if err != nil {
 		return "", "", err

@@ -24,6 +24,9 @@ type Environment struct {
 	URLPersistExpirationDuration time.Duration
 	URLCacheExpirationDuration   time.Duration
 
+	RefreshTokenDuration time.Duration
+	AccessTokenDuration  time.Duration
+
 	ListenAddress string
 }
 
@@ -57,6 +60,9 @@ func LoadAppConfig() AppConfig {
 
 			URLPersistExpirationDuration: config.MustEnvAsDuration("URL_PERSIST_EXPIRATION_DURATION"),
 			URLCacheExpirationDuration:   config.MustEnvAsDuration("URL_CACHE_EXPIRATION_DURATION"),
+
+			RefreshTokenDuration: config.MustEnvAsDuration("REFRESH_TOKEN_DURATION"),
+			AccessTokenDuration:  config.MustEnvAsDuration("ACCESS_TOKEN_DURATION"),
 
 			ListenAddress: config.MustEnv("LISTEN_ADDRESS"),
 		},

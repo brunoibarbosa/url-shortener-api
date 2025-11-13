@@ -39,7 +39,7 @@ type RegisterUserHTTPHandler struct {
 
 func NewRegisterUserHTTPHandler(cmd *command.RegisterUserHandler) *RegisterUserHTTPHandler {
 	return &RegisterUserHTTPHandler{
-		cmd: cmd,
+		cmd,
 	}
 }
 

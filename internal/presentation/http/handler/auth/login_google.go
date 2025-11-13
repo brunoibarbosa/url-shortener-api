@@ -19,7 +19,7 @@ type LoginGoogleHTTPHandler struct {
 
 func NewLoginGoogleHTTPHandler(cmd *command.LoginGoogleHandler) *LoginGoogleHTTPHandler {
 	return &LoginGoogleHTTPHandler{
-		cmd: cmd,
+		cmd,
 	}
 }
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"time"
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/session"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
@@ -58,9 +57,7 @@ func (r *SessionRepository) FindByRefreshToken(ctx context.Context, hash string)
 		}
 		return nil, err
 	}
-	if s.RevokedAt != nil || time.Now().After(*s.ExpiresAt) {
-		return nil, errors.New("invalid session")
-	}
+
 	return s, nil
 }
 

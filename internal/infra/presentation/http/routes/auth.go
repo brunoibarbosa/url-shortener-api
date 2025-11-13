@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/auth/command"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
@@ -16,10 +17,12 @@ import (
 )
 
 type AuthRoutesConfig struct {
-	JWTSecret     string
-	GoogleID      string
-	GoogleSecret  string
-	ListenAddress string
+	JWTSecret            string
+	GoogleID             string
+	GoogleSecret         string
+	ListenAddress        string
+	RefreshTokenDuration time.Duration
+	AccessTokenDuration  time.Duration
 }
 
 func SetupAuthRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, redisClient *redis.Client, config AuthRoutesConfig) {
@@ -32,23 +35,66 @@ func SetupAuthRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, redisClient 
 	provider := oauth_provider.NewGoogleOAuth(config.GoogleID, config.GoogleSecret, fmt.Sprintf("http://%s", config.ListenAddress))
 	tokenService := jwt.NewTokenService(config.JWTSecret)
 
-	registerHandler := command.NewRegisterUserHandler(userRepo, providerRepo, profileRepo)
-	registerHTTPHandler := handler.NewRegisterUserHTTPHandler(registerHandler)
-	r.Post("/auth/register", registerHTTPHandler.Handle)
+	// --------------------------------------------------
 
-	loginUserHandler := command.NewLoginUserHandler(providerRepo, sessionRepo, tokenService)
-	loginUserHTTPHandler := handler.NewLoginUserHTTPHandler(loginUserHandler)
-	r.Post("/auth/login", loginUserHTTPHandler.Handle)
+	registerHandler := command.NewRegisterUserHandler(
+		userRepo,
+		providerRepo,
+		profileRepo,
+	)
+	registerHTTPHandler := handler.NewRegisterUserHTTPHandler(registerHandler)
+
+	// --------------------------------------------------
+
+	loginUserHandler := command.NewLoginUserHandler(
+		providerRepo,
+		sessionRepo,
+		tokenService,
+		config.RefreshTokenDuration,
+		config.AccessTokenDuration,
+	)
+	loginUserHTTPHandler := handler.NewLoginUserHTTPHandler(loginUserHandler, config.RefreshTokenDuration)
+
+	// --------------------------------------------------
 
 	redirectGoogleHandler := command.NewRedirectGoogleHandler(provider)
 	redirectGoogleHTTPHandler := handler.NewRedirectGoogleHTTPHandler(redirectGoogleHandler)
-	r.Get("/auth/google", redirectGoogleHTTPHandler.Handle)
 
-	loginGoogleHandler := command.NewLoginGoogleHandler(provider, userRepo, providerRepo, profileRepo, tokenService)
+	// --------------------------------------------------
+
+	loginGoogleHandler := command.NewLoginGoogleHandler(
+		provider,
+		userRepo,
+		providerRepo,
+		profileRepo,
+		tokenService,
+		config.RefreshTokenDuration,
+		config.AccessTokenDuration,
+	)
 	loginGoogleHTTPHandler := handler.NewLoginGoogleHTTPHandler(loginGoogleHandler)
-	r.Get("/auth/google/callback", loginGoogleHTTPHandler.Handle)
 
-	refreshTokenHandler := command.NewRefreshTokenHandler(sessionRepo, blacklistRepo, tokenService)
-	refreshTokenHTTPHandler := handler.NewRefreshTokenHTTPHandler(refreshTokenHandler)
+	// --------------------------------------------------
+
+	refreshTokenHandler := command.NewRefreshTokenHandler(
+		sessionRepo,
+		blacklistRepo,
+		tokenService,
+		config.RefreshTokenDuration,
+		config.AccessTokenDuration,
+	)
+	refreshTokenHTTPHandler := handler.NewRefreshTokenHTTPHandler(refreshTokenHandler, config.RefreshTokenDuration)
+
+	// --------------------------------------------------
+
+	logoutHandler := command.NewLogoutHandler(sessionRepo, blacklistRepo)
+	logoutHTTPHandler := handler.NewLogoutHTTPHandler(logoutHandler)
+
+	// --------------------------------------------------
+
+	r.Post("/auth/register", registerHTTPHandler.Handle)
+	r.Post("/auth/login", loginUserHTTPHandler.Handle)
+	r.Get("/auth/google", redirectGoogleHTTPHandler.Handle)
+	r.Get("/auth/google/callback", loginGoogleHTTPHandler.Handle)
 	r.Post("/auth/refresh", refreshTokenHTTPHandler.Handle)
+	r.Post("/auth/logout", logoutHTTPHandler.Handle)
 }

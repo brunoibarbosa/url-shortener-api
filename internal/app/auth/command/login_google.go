@@ -20,20 +20,32 @@ type LoginGoogleCommand struct {
 }
 
 type LoginGoogleHandler struct {
-	provider     session.OAuthProvider
-	userRepo     user.UserRepository
-	providerRepo user.UserProviderRepository
-	profileRepo  user.UserProfileRepository
-	tokenService session.TokenService
+	provider             session.OAuthProvider
+	userRepo             user.UserRepository
+	providerRepo         user.UserProviderRepository
+	profileRepo          user.UserProfileRepository
+	tokenService         session.TokenService
+	refreshTokenDuration time.Duration
+	accessTokenDuration  time.Duration
 }
 
-func NewLoginGoogleHandler(provider session.OAuthProvider, userRepo user.UserRepository, providerRepo user.UserProviderRepository, profileRepo user.UserProfileRepository, tokenService session.TokenService) *LoginGoogleHandler {
+func NewLoginGoogleHandler(
+	provider session.OAuthProvider,
+	userRepo user.UserRepository,
+	providerRepo user.UserProviderRepository,
+	profileRepo user.UserProfileRepository,
+	tokenService session.TokenService,
+	refreshTokenDuration time.Duration,
+	accessTokenDuration time.Duration,
+) *LoginGoogleHandler {
 	return &LoginGoogleHandler{
 		provider,
 		userRepo,
 		providerRepo,
 		profileRepo,
 		tokenService,
+		refreshTokenDuration,
+		accessTokenDuration,
 	}
 }
 
@@ -51,7 +63,8 @@ func (h *LoginGoogleHandler) Handle(ctx context.Context, code string) (string, e
 
 	if existingProvider != nil {
 		tp := &session.TokenParams{
-			UserID: existingProvider.UserID,
+			UserID:   existingProvider.UserID,
+			Duration: h.accessTokenDuration,
 		}
 		return h.tokenService.GenerateAccessToken(tp)
 	}
@@ -88,7 +101,8 @@ func (h *LoginGoogleHandler) Handle(ctx context.Context, code string) (string, e
 	}
 
 	token, err := h.tokenService.GenerateAccessToken(&session.TokenParams{
-		UserID: u.ID,
+		UserID:   u.ID,
+		Duration: h.accessTokenDuration,
 	})
 	if err != nil {
 		return "", err

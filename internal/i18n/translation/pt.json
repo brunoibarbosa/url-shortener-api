@@ -26,7 +26,7 @@
   "error.login.invalid_credentials": "Email ou senha inválido",
   "error.login.social_login_only": "O usuário não possui senha (apenas login social)",
   "error.login.failed": "Falha ao realizar login",
-  "error.login.invalid_refresh_token": "Token de atualização inválido ou expirado",
+  "error.session.invalid_refresh_token": "Token de atualização inválido ou expirado",
   
   "error.session.missing_refresh_token": "Faltando token de atualização",
   "error.session.generate_refresh_token": "Falha ao gerar token"

@@ -26,8 +26,8 @@
   "error.login.invalid_credentials": "Invalid email or password",
   "error.login.social_login_only": "User has no password (social login only)",
   "error.login.failed": "Failed to login",
-  "error.login.invalid_refresh_token": "Invalid or expired refresh token",
 
+  "error.session.invalid_refresh_token": "Invalid or expired refresh token",
   "error.session.missing_refresh_token": "Missing refresh token",
   "error.session.generate_refresh_token": "Failed to generate token"
 }

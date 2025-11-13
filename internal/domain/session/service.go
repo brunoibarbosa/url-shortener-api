@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -23,6 +24,14 @@ type OAuthUser struct {
 type TokenParams struct {
 	UserID    uuid.UUID
 	SessionID uuid.UUID
+	Duration  time.Duration
+}
+
+type TokenClaims struct {
+	Sub string
+	Sid string
+	Exp int64
+	Iat int64
 }
 
 type OAuthProvider interface {
@@ -32,5 +41,6 @@ type OAuthProvider interface {
 
 type TokenService interface {
 	GenerateAccessToken(params *TokenParams) (string, error)
+	ParseAndValidate(tokenStr string) (*TokenClaims, error)
 	GenerateRefreshToken() uuid.UUID
 }
