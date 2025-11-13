@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/auth/command"
 	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
@@ -14,12 +15,14 @@ type LoginGoogle200Response struct {
 }
 
 type LoginGoogleHTTPHandler struct {
-	cmd *command.LoginGoogleHandler
+	cmd                  *command.LoginGoogleHandler
+	refreshTokenDuration time.Duration
 }
 
-func NewLoginGoogleHTTPHandler(cmd *command.LoginGoogleHandler) *LoginGoogleHTTPHandler {
+func NewLoginGoogleHTTPHandler(cmd *command.LoginGoogleHandler, refreshTokenDuration time.Duration) *LoginGoogleHTTPHandler {
 	return &LoginGoogleHTTPHandler{
 		cmd,
+		refreshTokenDuration,
 	}
 }
 
@@ -31,13 +34,29 @@ func (h *LoginGoogleHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) 
 		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.login.failed", nil)
 	}
 
-	token, err := h.cmd.Handle(ctx, code)
+	appCmd := command.LoginGoogleCommand{
+		Code:      code,
+		UserAgent: r.UserAgent(),
+		IPAddress: r.RemoteAddr,
+	}
+
+	accessToken, refreshToken, err := h.cmd.Handle(ctx, appCmd)
 	if err != nil {
 		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.login.failed", nil)
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   int(h.refreshTokenDuration.Seconds()),
+	})
+
 	response := LoginGoogle200Response{
-		AccessToken: token,
+		AccessToken: accessToken,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

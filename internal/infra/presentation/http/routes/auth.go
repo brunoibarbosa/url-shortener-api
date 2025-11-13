@@ -67,11 +67,12 @@ func SetupAuthRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, redisClient 
 		userRepo,
 		providerRepo,
 		profileRepo,
+		sessionRepo,
 		tokenService,
 		config.RefreshTokenDuration,
 		config.AccessTokenDuration,
 	)
-	loginGoogleHTTPHandler := handler.NewLoginGoogleHTTPHandler(loginGoogleHandler)
+	loginGoogleHTTPHandler := handler.NewLoginGoogleHTTPHandler(loginGoogleHandler, config.RefreshTokenDuration)
 
 	// --------------------------------------------------
 
