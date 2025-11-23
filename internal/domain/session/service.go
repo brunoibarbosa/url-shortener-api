@@ -41,6 +41,5 @@ type OAuthProvider interface {
 
 type TokenService interface {
 	GenerateAccessToken(params *TokenParams) (string, error)
-	ParseAndValidate(tokenStr string) (*TokenClaims, error)
 	GenerateRefreshToken() uuid.UUID
 }

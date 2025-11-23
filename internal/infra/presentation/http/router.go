@@ -31,3 +31,10 @@ func (r *AppRouter) Put(pattern string, handlerCb handler.HandlerFunc) {
 func (r *AppRouter) Delete(pattern string, handlerCb handler.HandlerFunc) {
 	r.Mux.Delete(pattern, handler.RequestValidator(handlerCb))
 }
+
+func (r *AppRouter) Group(fn func(*AppRouter)) {
+	r.Mux.Group(func(cr chi.Router) {
+		sub := &AppRouter{Mux: cr.(*chi.Mux)}
+		fn(sub)
+	})
+}

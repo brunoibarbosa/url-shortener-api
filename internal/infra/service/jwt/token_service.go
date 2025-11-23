@@ -37,30 +37,6 @@ func (s *TokenService) GenerateAccessToken(params *session.TokenParams) (string,
 	return signed, nil
 }
 
-func (s *TokenService) ParseAndValidate(tokenStr string) (*session.TokenClaims, error) {
-	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, jwt.ErrSignatureInvalid
-		}
-		return s.secret, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
-		return nil, jwt.ErrTokenInvalidClaims
-	}
-
-	return &session.TokenClaims{
-		Sub: claims["sub"].(string),
-		Sid: claims["sid"].(string),
-		Exp: claims["exp"].(int64),
-		Iat: claims["iat"].(int64),
-	}, nil
-}
-
 func (s *TokenService) GenerateRefreshToken() uuid.UUID {
 	tokenID := uuid.New()
 	return tokenID

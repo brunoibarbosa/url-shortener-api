@@ -4,6 +4,8 @@
   "error.common.not_found": "Nenhum resultado encontrado",
   "error.common.empty_body": "O corpo da requisição não pode estar vazio",
   "error.common.encode_failed": "Falha ao codificar a resposta",
+  "error.common.required_pagination": "Parâmetros de paginação são obrigatórios",
+  "error.common.invalid_parameter": "Parâmetro inválido",
 
   "error.url.url_required": "O campo 'url' é obrigatório no corpo da requisição",
   "error.url.create_failed": "Falha ao criar URL encurtada",
@@ -26,8 +28,10 @@
   "error.login.invalid_credentials": "Email ou senha inválido",
   "error.login.social_login_only": "O usuário não possui senha (apenas login social)",
   "error.login.failed": "Falha ao realizar login",
+
   "error.session.invalid_refresh_token": "Token de atualização inválido ou expirado",
-  
+  "error.session.invalid_access_token": "Token de acesso inválido ou expirado",
   "error.session.missing_refresh_token": "Faltando token de atualização",
+  "error.session.missing_access_token": "Faltando token de acesso",
   "error.session.generate_refresh_token": "Falha ao gerar token"
 }

@@ -13,17 +13,11 @@ import (
 	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
 	"github.com/brunoibarbosa/url-shortener/internal/validation"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
-	"github.com/google/uuid"
 )
 
 type LoginUserPayload struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
-}
-
-type UserPayload struct {
-	ID    uuid.UUID `json:"id"`
-	Email string    `json:"email"`
 }
 
 type LoginUser200Response struct {

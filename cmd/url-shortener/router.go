@@ -28,6 +28,9 @@ func getRouter(postgres *pg.Postgres, redisClient *redis.Client, appConfig AppCo
 		RefreshTokenDuration: appConfig.Env.RefreshTokenDuration,
 		AccessTokenDuration:  appConfig.Env.AccessTokenDuration,
 	})
+	http.SetupSessionRoutes(r, postgres, http.SessionRoutesConfig{
+		JWTSecret: appConfig.Env.JWTSecret,
+	})
 
 	return r
 }

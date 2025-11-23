@@ -4,6 +4,8 @@
   "error.common.not_found": "No results found",
   "error.common.empty_body": "Request body must not be empty",
   "error.common.encode_failed": "Failed to encode response",
+  "error.common.required_pagination": "Pagination parameters are required",
+  "error.common.invalid_parameter": "Invalid parameter",
 
   "error.url.url_required": "'url' field is required in the request body",
   "error.url.create_failed": "Failed to create short URL",
@@ -28,6 +30,8 @@
   "error.login.failed": "Failed to login",
 
   "error.session.invalid_refresh_token": "Invalid or expired refresh token",
+  "error.session.invalid_access_token": "Invalid or expired access token",
   "error.session.missing_refresh_token": "Missing refresh token",
+  "error.session.missing_access_token": "Missing access token",
   "error.session.generate_refresh_token": "Failed to generate token"
 }

@@ -5,4 +5,5 @@ const (
 	CodeValidationError = "VALIDATION_ERROR"
 	CodeInternalError   = "INTERNAL_ERROR"
 	CodeBadRequest      = "BAD_REQUEST"
+	CodeUnauthorized    = "UNAUTHORIZED"
 )
