@@ -31,7 +31,7 @@ func (h *LoginGoogleHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) 
 
 	code := r.URL.Query().Get("code")
 	if code == "" {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.login.failed", nil)
+		return nil, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.login.failed", handler.Detail(ctx, "code", "error.details.field_required"))
 	}
 
 	appCmd := command.LoginGoogleCommand{

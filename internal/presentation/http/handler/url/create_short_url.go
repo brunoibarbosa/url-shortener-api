@@ -67,25 +67,31 @@ func validateShortenPayload(r *http.Request, ctx context.Context) (CreateShortUR
 		return CreateShortURLPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.empty_body", nil)
 	}
 
+	ec := handler.NewErrorCollector(ctx)
+
 	if payload.URL == "" {
-		return CreateShortURLPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.url.url_required", nil)
+		ec.AddFieldError("url", "error.details.field_required")
 	}
 
 	if validationErr := validation.ValidateURL(payload.URL); validationErr != nil {
-		var errorCode string
+		var detailKey string
 
 		switch {
 		case err.Is(validationErr, domain.ErrMissingURLSchema):
-			errorCode = "error.url.missing_schema"
+			detailKey = "error.details.url.missing_scheme"
 		case err.Is(validationErr, domain.ErrUnsupportedURLSchema):
-			errorCode = "error.url.unsupported_schema"
+			detailKey = "error.details.url.invalid_format"
 		case err.Is(validationErr, domain.ErrMissingURLHost):
-			errorCode = "error.url.missing_host"
+			detailKey = "error.details.url.invalid_format"
 		default:
-			errorCode = "error.url.invalid_url"
+			detailKey = "error.details.url.invalid_format"
 		}
 
-		return CreateShortURLPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, errorCode, nil)
+		ec.AddFieldError("url", detailKey)
+	}
+
+	if ec.HasErrors() {
+		return CreateShortURLPayload{}, ec.ToHTTPError(http.StatusBadRequest, errors.CodeValidationError, "error.validation.failed")
 	}
 
 	return payload, nil

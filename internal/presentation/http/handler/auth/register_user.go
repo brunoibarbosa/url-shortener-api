@@ -56,7 +56,7 @@ func (h *RegisterUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	if handleErr != nil {
 		switch {
 		case err.Is(handleErr, domain.ErrEmailAlreadyExists):
-			return nil, handler.NewI18nHTTPError(ctx, http.StatusConflict, errors.CodeValidationError, "error.email.email_already_exists", nil)
+			return nil, handler.NewI18nHTTPError(ctx, http.StatusConflict, errors.CodeValidationError, "error.validation.failed", handler.Detail(ctx, "email", "error.details.email.already_exists"))
 		default:
 			return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.user.create_failed", nil)
 		}
@@ -88,27 +88,41 @@ func validateRegisterPayload(r *http.Request, ctx context.Context) (RegisterUser
 		return RegisterUserPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.empty_body", nil)
 	}
 
-	if validationErr := validation.ValidateEmail(payload.Email); validationErr != nil {
-		return RegisterUserPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.email.invalid_email_format", nil)
+	ec := handler.NewErrorCollector(ctx)
+
+	if payload.Email == "" {
+		ec.AddFieldError("email", "error.details.email.invalid_format")
+	} else if validationErr := validation.ValidateEmail(payload.Email); validationErr != nil {
+		ec.AddFieldError("email", "error.details.email.invalid_format")
 	}
 
-	if validationErr := validation.ValidatePassword(payload.Password); validationErr != nil {
+	if payload.Password == "" {
+		ec.AddFieldError("password", "error.details.field_required")
+	} else if validationErr := validation.ValidatePassword(payload.Password); validationErr != nil {
 		var errorCode string
 
 		switch {
 		case err.Is(validationErr, domain.ErrPasswordMissingDigit):
-			errorCode = "error.password.missing_digit"
+			errorCode = "error.details.password.missing_digit"
 		case err.Is(validationErr, domain.ErrPasswordMissingLower):
-			errorCode = "error.password.missing_lower"
+			errorCode = "error.details.password.missing_lower"
 		case err.Is(validationErr, domain.ErrPasswordMissingUpper):
-			errorCode = "error.password.missing_uper"
+			errorCode = "error.details.password.missing_upper"
 		case err.Is(validationErr, domain.ErrPasswordMissingSymbol):
-			errorCode = "error.password.missing_symbol"
+			errorCode = "error.details.password.missing_symbol"
 		default:
-			errorCode = "error.password.too_short"
+			errorCode = "error.details.password.too_short"
 		}
 
-		return RegisterUserPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, errorCode, nil)
+		ec.AddFieldError("password", errorCode)
+	}
+
+	if payload.Name == "" {
+		ec.AddFieldError("name", "error.details.field_required")
+	}
+
+	if ec.HasErrors() {
+		return RegisterUserPayload{}, ec.ToHTTPError(http.StatusBadRequest, errors.CodeValidationError, "error.validation.failed")
 	}
 
 	return payload, nil

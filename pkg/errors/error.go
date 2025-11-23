@@ -1,9 +1,16 @@
 package errors
 
 const (
-	CodeNotFound        = "NOT_FOUND"
+	// Resource errors
+	CodeNotFound = "NOT_FOUND"
+
+	// Validation errors
 	CodeValidationError = "VALIDATION_ERROR"
-	CodeInternalError   = "INTERNAL_ERROR"
-	CodeBadRequest      = "BAD_REQUEST"
-	CodeUnauthorized    = "UNAUTHORIZED"
+
+	// Server errors
+	CodeInternalError = "INTERNAL_ERROR"
+	CodeBadRequest    = "BAD_REQUEST"
+
+	// Authentication errors
+	CodeUnauthorized = "UNAUTHORIZED"
 )

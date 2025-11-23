@@ -1,37 +1,40 @@
 {
-  "error.server.internal": "Erro interno do servidor",
+  "error.server.internal": "Ocorreu um erro inesperado ao processar sua solicitação",
 
-  "error.common.not_found": "Nenhum resultado encontrado",
+  "error.common.not_found": "O recurso solicitado não foi encontrado",
   "error.common.empty_body": "O corpo da requisição não pode estar vazio",
   "error.common.encode_failed": "Falha ao codificar a resposta",
-  "error.common.required_pagination": "Parâmetros de paginação são obrigatórios",
-  "error.common.invalid_parameter": "Parâmetro inválido",
+  "error.common.required_pagination": "Os parâmetros de paginação são obrigatórios",
+  "error.validation.failed": "Um ou mais parâmetros da requisição são inválidos",
+  
+  "error.details.field_required": "Este campo é obrigatório",
+  "error.details.parameter_invalid": "Valor do parâmetro inválido",
+  "error.details.parameter_must_be_positive": "Deve ser um número positivo",
+  "error.details.parameter_invalid_sort": "Campo de ordenação inválido",
 
-  "error.url.url_required": "O campo 'url' é obrigatório no corpo da requisição",
-  "error.url.create_failed": "Falha ao criar URL encurtada",
-  "error.url.missing_schema": "A URL está sem o esquema (por exemplo, http ou https)",
-  "error.url.unsupported_schema": "Esquema não suportado",
-  "error.url.missing_host": "A URL está sem o host",
-  "error.url.invalid_url": "URL inválida",
-  "error.url.expired_url": "A URL expirou",
+  "error.url.expired_url": "Esta URL encurtada expirou e não está mais acessível",
+  "error.details.url.missing_scheme": "URL deve começar com http:// ou https://",
+  "error.details.url.invalid_format": "Formato de URL inválido",
+  "error.details.shortcode.not_found": "URL encurtada não encontrada",
+  "error.details.shortcode.expired": "Esta URL encurtada expirou",
 
-  "error.user.create_failed": "Falha ao registrar usuário",
-  "error.email.email_already_exists": "Email já está em uso",
-  "error.email.invalid_email_format": "Email inválido",
-  "error.password.missing_digit": "A senha deve conter ao menos um número",
-  "error.password.missing_lower": "A senha deve conter ao menos uma letra minúscula",
-  "error.password.missing_uper": "A senha deve conter ao menos uma letra maiúscula",
-  "error.password.missing_symbol": "A senha deve conter ao menos um caractere especial",
-  "error.password.too_short": "A senha deve ter no mínimo 8 caracteres",
-  "error.password.required": "Senha obrigatória",
+  "error.user.create_failed": "Falha ao criar conta de usuário",
+
+  "error.details.email.invalid_format": "Formato de email inválido",
+  "error.details.email.already_exists": "Este email já está cadastrado",
+
+  "error.details.password.too_short": "Deve ter no mínimo 8 caracteres",
+  "error.details.password.missing_digit": "Deve conter pelo menos um dígito (0-9)",
+  "error.details.password.missing_lower": "Deve conter pelo menos uma letra minúscula (a-z)",
+  "error.details.password.missing_upper": "Deve conter pelo menos uma letra maiúscula (A-Z)",
+  "error.details.password.missing_symbol": "Deve conter pelo menos um caractere especial (ex.: !@#$%^&*)",
 
   "error.login.invalid_credentials": "Email ou senha inválido",
-  "error.login.social_login_only": "O usuário não possui senha (apenas login social)",
-  "error.login.failed": "Falha ao realizar login",
+  "error.login.failed": "Falha ao realizar login devido a um erro inesperado",
 
-  "error.session.invalid_refresh_token": "Token de atualização inválido ou expirado",
-  "error.session.invalid_access_token": "Token de acesso inválido ou expirado",
-  "error.session.missing_refresh_token": "Faltando token de atualização",
-  "error.session.missing_access_token": "Faltando token de acesso",
-  "error.session.generate_refresh_token": "Falha ao gerar token"
+  "error.session.invalid_refresh_token": "O token de atualização é inválido ou expirou",
+  "error.session.invalid_access_token": "O token de acesso é inválido ou expirou",
+  "error.session.missing_refresh_token": "Token de atualização ausente",
+  "error.session.missing_access_token": "Token de acesso ausente",
+  "error.session.generate_refresh_token": "Falha ao gerar um novo token de autenticação"
 }

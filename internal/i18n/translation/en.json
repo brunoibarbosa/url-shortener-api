@@ -1,37 +1,40 @@
 {
-  "error.server.internal": "Internal server error",
+  "error.server.internal": "An unexpected error occurred while processing your request",
 
-  "error.common.not_found": "No results found",
-  "error.common.empty_body": "Request body must not be empty",
-  "error.common.encode_failed": "Failed to encode response",
+  "error.common.not_found": "The requested resource could not be found",
+  "error.common.empty_body": "Request body cannot be empty",
+  "error.common.encode_failed": "Failed to encode the response",
   "error.common.required_pagination": "Pagination parameters are required",
-  "error.common.invalid_parameter": "Invalid parameter",
+  "error.validation.failed": "One or more request parameters are invalid",
+  
+  "error.details.field_required": "This field is required",
+  "error.details.parameter_invalid": "Invalid parameter value",
+  "error.details.parameter_must_be_positive": "Must be a positive number",
+  "error.details.parameter_invalid_sort": "Invalid sort field",
 
-  "error.url.url_required": "'url' field is required in the request body",
-  "error.url.create_failed": "Failed to create short URL",
-  "error.url.missing_schema": "URL is missing scheme (e.g., http or https)",
-  "error.url.unsupported_schema": "Unsupported scheme",
-  "error.url.missing_host": "URL is missing host",
-  "error.url.invalid_url": "Invalid URL",
-  "error.url.expired_url": "URL has expired",
+  "error.url.expired_url": "This shortened URL has expired and is no longer accessible",
+  "error.details.url.missing_scheme": "URL must start with http:// or https://",
+  "error.details.url.invalid_format": "Invalid URL format",
+  "error.details.shortcode.not_found": "Short URL not found",
+  "error.details.shortcode.expired": "This short URL has expired",
 
-  "error.user.create_failed": "Failed to register user",
-  "error.email.email_already_exists": "Email already in use",
-  "error.email.invalid_email_format": "Invalid email",
-  "error.password.missing_digit": "Password must contain at least one digit",
-  "error.password.missing_lower": "Password must contain at least one lowercase letter",
-  "error.password.missing_uper": "Password must contain at least one uppercase letter",
-  "error.password.missing_symbol": "Password must contain at least one special character",
-  "error.password.too_short": "Password must be at least 8 characters long",
-  "error.password.required": "Password is required",
+  "error.user.create_failed": "Failed to create user account",
+
+  "error.details.email.invalid_format": "Invalid email format",
+  "error.details.email.already_exists": "This email is already registered",
+
+  "error.details.password.too_short": "Must be at least 8 characters",
+  "error.details.password.missing_digit": "Must contain at least one digit (0-9)",
+  "error.details.password.missing_lower": "Must contain at least one lowercase letter (a-z)",
+  "error.details.password.missing_upper": "Must contain at least one uppercase letter (A-Z)",
+  "error.details.password.missing_symbol": "Must contain at least one special character (e.g., !@#$%^&*)",
 
   "error.login.invalid_credentials": "Invalid email or password",
-  "error.login.social_login_only": "User has no password (social login only)",
-  "error.login.failed": "Failed to login",
+  "error.login.failed": "Login failed due to an unexpected error",
 
-  "error.session.invalid_refresh_token": "Invalid or expired refresh token",
-  "error.session.invalid_access_token": "Invalid or expired access token",
-  "error.session.missing_refresh_token": "Missing refresh token",
-  "error.session.missing_access_token": "Missing access token",
-  "error.session.generate_refresh_token": "Failed to generate token"
+  "error.session.invalid_refresh_token": "The refresh token is invalid or has expired",
+  "error.session.invalid_access_token": "The access token is invalid or has expired",
+  "error.session.missing_refresh_token": "Refresh token is missing",
+  "error.session.missing_access_token": "Access token is missing",
+  "error.session.generate_refresh_token": "Failed to generate a new authentication token"
 }

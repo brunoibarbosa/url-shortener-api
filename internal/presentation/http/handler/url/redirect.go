@@ -27,11 +27,11 @@ func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (ha
 	ctx := r.Context()
 
 	if err != nil && errors.Is(err, domain.ErrExpiredURL) {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusGone, app_errors.CodeNotFound, "error.url.expired_url", nil)
+		return nil, handler.NewI18nHTTPError(ctx, http.StatusGone, app_errors.CodeNotFound, "error.url.expired_url", handler.Detail(ctx, "shortCode", "error.details.shortcode.expired"))
 	}
 
 	if (err != nil && errors.Is(err, domain.ErrURLNotFound)) || originalURL == "" {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusNotFound, app_errors.CodeNotFound, "error.common.not_found", nil)
+		return nil, handler.NewI18nHTTPError(ctx, http.StatusNotFound, app_errors.CodeNotFound, "error.common.not_found", handler.Detail(ctx, "shortCode", "error.details.shortcode.not_found"))
 	}
 
 	http.Redirect(w, r, originalURL, http.StatusFound)

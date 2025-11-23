@@ -27,14 +27,14 @@ func (m *AuthMiddleware) Handler(next http.Handler) http.Handler {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			httpError := handler.NewI18nHTTPError(r.Context(), http.StatusUnauthorized, errors.CodeUnauthorized, "error.session.missing_access_token", nil)
-			handler.WriteJSONError(w, httpError.Status, httpError.Code, httpError.Message)
+			handler.WriteJSONError(w, httpError.Status, httpError.Code, httpError.Message, httpError.SubCode)
 			return
 		}
 
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
 			httpError := handler.NewI18nHTTPError(r.Context(), http.StatusUnauthorized, errors.CodeUnauthorized, "error.session.invalid_access_token", nil)
-			handler.WriteJSONError(w, httpError.Status, httpError.Code, httpError.Message)
+			handler.WriteJSONError(w, httpError.Status, httpError.Code, httpError.Message, httpError.SubCode)
 			return
 		}
 
@@ -48,21 +48,21 @@ func (m *AuthMiddleware) Handler(next http.Handler) http.Handler {
 
 		if err != nil || !token.Valid {
 			httpError := handler.NewI18nHTTPError(r.Context(), http.StatusUnauthorized, errors.CodeUnauthorized, "error.session.invalid_access_token", nil)
-			handler.WriteJSONError(w, httpError.Status, httpError.Code, httpError.Message)
+			handler.WriteJSONError(w, httpError.Status, httpError.Code, httpError.Message, httpError.SubCode)
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
 			httpError := handler.NewI18nHTTPError(r.Context(), http.StatusUnauthorized, errors.CodeUnauthorized, "error.session.invalid_access_token", nil)
-			handler.WriteJSONError(w, httpError.Status, httpError.Code, httpError.Message)
+			handler.WriteJSONError(w, httpError.Status, httpError.Code, httpError.Message, httpError.SubCode)
 			return
 		}
 
 		sid, ok := claims["sid"].(string)
 		if !ok || sid == "" {
 			httpError := handler.NewI18nHTTPError(r.Context(), http.StatusUnauthorized, errors.CodeUnauthorized, "error.session.invalid_access_token", nil)
-			handler.WriteJSONError(w, httpError.Status, httpError.Code, httpError.Message)
+			handler.WriteJSONError(w, httpError.Status, httpError.Code, httpError.Message, httpError.SubCode)
 			return
 		}
 

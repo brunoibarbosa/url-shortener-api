@@ -94,34 +94,40 @@ func (h *ListSessionsHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 func validateListSessionsParams(r *http.Request, ctx context.Context) (ListSessionsParams, *handler.HTTPError) {
 	var params ListSessionsParams
 
+	ec := handler.NewErrorCollector(ctx)
+
 	// --------------------------------------------------
 
 	v := r.URL.Query().Get("page")
 	if v == "" {
-		return ListSessionsParams{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.required_pagination", nil)
+		ec.AddFieldError("page", "error.details.field_required")
+	} else {
+		page, parseErr := strconv.ParseUint(v, 10, 64)
+		if page == 0 || parseErr != nil {
+			ec.AddFieldError("page", "error.details.parameter_must_be_positive")
+		}
+		params.Page = page
 	}
-	page, parseErr := strconv.ParseUint(v, 10, 64)
-	if page == 0 || parseErr != nil {
-		return ListSessionsParams{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.invalid_parameter", nil)
-	}
-	params.Page = page
-
-	// --------------------------------------------------
 
 	v = r.URL.Query().Get("limit")
 	if v == "" {
-		return ListSessionsParams{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.required_pagination", nil)
+		ec.AddFieldError("limit", "error.details.field_required")
+	} else {
+		limit, parseErr := strconv.ParseUint(v, 10, 64)
+		if limit == 0 || parseErr != nil {
+			ec.AddFieldError("limit", "error.details.parameter_must_be_positive")
+		}
+		params.Limit = limit
 	}
-	limit, parseErr := strconv.ParseUint(v, 10, 64)
-	if limit == 0 || parseErr != nil {
-		return ListSessionsParams{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.invalid_parameter", nil)
+
+	if ec.HasErrors() {
+		return ListSessionsParams{}, ec.ToHTTPError(http.StatusBadRequest, errors.CodeValidationError, "error.common.required_pagination")
 	}
-	params.Limit = limit
 
 	// --------------------------------------------------
 
 	v = r.URL.Query().Get("sortBy")
-	var sortBy query.ListSessionsSortBy
+	var sortBy = query.ListSessionsSortByNone
 	if v != "" {
 		switch strings.ToUpper(v) {
 		case "USERAGENT":
@@ -133,15 +139,13 @@ func validateListSessionsParams(r *http.Request, ctx context.Context) (ListSessi
 		case "EXPIRESAT":
 			sortBy = query.ListSessionsSortByExpiresAt
 		default:
-			return ListSessionsParams{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.invalid_parameter", nil)
+			ec.AddFieldError("sortBy", "error.details.parameter_invalid_sort")
 		}
 	}
 	params.SortBy = sortBy
 
-	// --------------------------------------------------
-
 	v = r.URL.Query().Get("sortKind")
-	var sortKind domain.SortKind
+	var sortKind = domain.SortNone
 	if v != "" {
 		switch strings.ToUpper(v) {
 		case "ASC":
@@ -149,10 +153,25 @@ func validateListSessionsParams(r *http.Request, ctx context.Context) (ListSessi
 		case "DESC":
 			sortKind = domain.SortDesc
 		default:
-			return ListSessionsParams{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.invalid_parameter", nil)
+			ec.AddFieldError("sortKind", "error.details.parameter_invalid")
 		}
 	}
 	params.SortKind = sortKind
+
+	if !ec.HasErrors() {
+		if params.SortBy == 0 && params.SortKind != 0 {
+			ec.AddFieldError("sortBy", "error.details.field_required")
+		}
+		if params.SortBy != 0 && params.SortKind == 0 {
+			ec.AddFieldError("sortKind", "error.details.field_required")
+		}
+	}
+
+	if ec.HasErrors() {
+		return ListSessionsParams{}, ec.ToHTTPError(http.StatusBadRequest, errors.CodeValidationError, "error.validation.failed")
+	}
+
+	// --------------------------------------------------
 
 	return params, nil
 }

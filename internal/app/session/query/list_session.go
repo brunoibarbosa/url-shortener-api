@@ -17,7 +17,8 @@ type ListSessionsDTO struct {
 type ListSessionsSortBy uint8
 
 const (
-	ListSessionsSortByUserAgent ListSessionsSortBy = iota
+	ListSessionsSortByNone ListSessionsSortBy = iota
+	ListSessionsSortByUserAgent
 	ListSessionsSortByIPAddress
 	ListSessionsSortByCreatedAt
 	ListSessionsSortByExpiresAt

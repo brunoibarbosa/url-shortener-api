@@ -93,12 +93,20 @@ func validateLoginUserPayload(r *http.Request, ctx context.Context) (LoginUserPa
 		return LoginUserPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.empty_body", nil)
 	}
 
-	if validationErr := validation.ValidateEmail(payload.Email); validationErr != nil {
-		return LoginUserPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.email.invalid_email_format", nil)
+	ec := handler.NewErrorCollector(ctx)
+
+	if payload.Email == "" {
+		ec.AddFieldError("email", "error.details.field_required")
+	} else if validationErr := validation.ValidateEmail(payload.Email); validationErr != nil {
+		ec.AddFieldError("email", "error.details.email.invalid_format")
 	}
 
 	if len(payload.Password) == 0 {
-		return LoginUserPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.password.required", nil)
+		ec.AddFieldError("password", "error.details.field_required")
+	}
+
+	if ec.HasErrors() {
+		return LoginUserPayload{}, ec.ToHTTPError(http.StatusBadRequest, errors.CodeValidationError, "error.validation.failed")
 	}
 
 	return payload, nil
