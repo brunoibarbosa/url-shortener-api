@@ -38,6 +38,7 @@ func SetupAuthRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, redisClient 
 	// --------------------------------------------------
 
 	registerHandler := command.NewRegisterUserHandler(
+		pgConn,
 		userRepo,
 		providerRepo,
 		profileRepo,
@@ -47,6 +48,7 @@ func SetupAuthRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, redisClient 
 	// --------------------------------------------------
 
 	loginUserHandler := command.NewLoginUserHandler(
+		pgConn,
 		providerRepo,
 		sessionRepo,
 		tokenService,
@@ -63,6 +65,7 @@ func SetupAuthRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, redisClient 
 	// --------------------------------------------------
 
 	loginGoogleHandler := command.NewLoginGoogleHandler(
+		pgConn,
 		provider,
 		userRepo,
 		providerRepo,
@@ -77,6 +80,7 @@ func SetupAuthRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, redisClient 
 	// --------------------------------------------------
 
 	refreshTokenHandler := command.NewRefreshTokenHandler(
+		pgConn,
 		sessionRepo,
 		blacklistRepo,
 		tokenService,

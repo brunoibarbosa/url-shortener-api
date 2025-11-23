@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/domain/session"
+	session_domain "github.com/brunoibarbosa/url-shortener/internal/domain/session"
 	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
 )
 
@@ -13,13 +13,13 @@ type LogoutCommand struct {
 }
 
 type LogoutHandler struct {
-	sessionRepo   session.SessionRepository
-	blacklistRepo session.BlacklistRepository
+	sessionRepo   session_domain.SessionRepository
+	blacklistRepo session_domain.BlacklistRepository
 }
 
 func NewLogoutHandler(
-	sessionRepo session.SessionRepository,
-	blacklistRepo session.BlacklistRepository,
+	sessionRepo session_domain.SessionRepository,
+	blacklistRepo session_domain.BlacklistRepository,
 ) *LogoutHandler {
 	return &LogoutHandler{
 		sessionRepo,
@@ -32,15 +32,15 @@ func (h *LogoutHandler) Handle(ctx context.Context, cmd LogoutCommand) error {
 
 	s, err := h.sessionRepo.FindByRefreshToken(ctx, hashed)
 	if err != nil || s == nil {
-		return session.ErrNotFound
+		return session_domain.ErrNotFound
 	}
 
 	if s.IsExpired() {
-		return session.ErrInvalidRefreshToken
+		return session_domain.ErrInvalidRefreshToken
 	}
 
 	if err := h.sessionRepo.Revoke(ctx, s.ID); err != nil {
-		return session.ErrRevokeFailed
+		return session_domain.ErrRevokeFailed
 	}
 
 	remainder := time.Until(*s.ExpiresAt)

@@ -9,18 +9,24 @@ import (
 )
 
 type UserRepository struct {
-	db *pg.Postgres
+	db pg.Querier
 }
 
-func NewUserRepository(pg *pg.Postgres) *UserRepository {
+func NewUserRepository(postgres *pg.Postgres) *UserRepository {
 	return &UserRepository{
-		db: pg,
+		db: postgres.Pool,
+	}
+}
+
+func (r *UserRepository) WithTx(tx pgx.Tx) domain.UserRepository {
+	return &UserRepository{
+		db: tx,
 	}
 }
 
 func (r *UserRepository) Exists(ctx context.Context, email string) (bool, error) {
 	var exists bool
-	err := r.db.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)", email).Scan(&exists)
+	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)", email).Scan(&exists)
 	return exists, err
 }
 
@@ -28,7 +34,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 	var u = domain.User{}
 	var pf = domain.UserProfile{}
 
-	err := r.db.Pool.QueryRow(ctx, `
+	err := r.db.QueryRow(ctx, `
 		SELECT 
 			u.id, 
 			u.email, 
@@ -50,17 +56,5 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 }
 
 func (r *UserRepository) Create(ctx context.Context, u *domain.User) error {
-	tx, err := r.db.Pool.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		tx.Rollback(ctx)
-		return err
-	}
-
-	err = tx.QueryRow(ctx, "INSERT INTO users (email) VALUES ($1) RETURNING id, created_at", u.Email).Scan(&u.ID, &u.CreatedAt)
-	if err != nil {
-		tx.Rollback(ctx)
-		return err
-	}
-
-	return tx.Commit(ctx)
+	return r.db.QueryRow(ctx, "INSERT INTO users (email) VALUES ($1) RETURNING id, created_at", u.Email).Scan(&u.ID, &u.CreatedAt)
 }

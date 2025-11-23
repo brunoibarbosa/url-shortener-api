@@ -4,9 +4,11 @@ import (
 	"context"
 	"time"
 
-	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
+	user_domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
+	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
 	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 type RegisterUserCommand struct {
@@ -18,19 +20,21 @@ type RegisterUserCommand struct {
 type RegisterUserResponse struct {
 	ID        uuid.UUID
 	Email     string
-	Profile   domain.UserProfile
+	Profile   user_domain.UserProfile
 	CreatedAt time.Time
 	UpdatedAt *time.Time
 }
 
 type RegisterUserHandler struct {
-	userRepo     domain.UserRepository
-	providerRepo domain.UserProviderRepository
-	profileRepo  domain.UserProfileRepository
+	db           *pg.Postgres
+	userRepo     user_domain.UserRepository
+	providerRepo user_domain.UserProviderRepository
+	profileRepo  user_domain.UserProfileRepository
 }
 
-func NewRegisterUserHandler(userRepo domain.UserRepository, providerRepo domain.UserProviderRepository, profileRepo domain.UserProfileRepository) *RegisterUserHandler {
+func NewRegisterUserHandler(db *pg.Postgres, userRepo user_domain.UserRepository, providerRepo user_domain.UserProviderRepository, profileRepo user_domain.UserProfileRepository) *RegisterUserHandler {
 	return &RegisterUserHandler{
+		db,
 		userRepo,
 		providerRepo,
 		profileRepo,
@@ -49,34 +53,44 @@ func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserComman
 	}
 
 	if exists {
-		return nil, domain.ErrEmailAlreadyExists
+		return nil, user_domain.ErrEmailAlreadyExists
 	}
 
-	// Cria o usuário
-	u := &domain.User{
-		Email: cmd.Email,
-	}
-	err = h.userRepo.Create(ctx, u)
-	if err != nil {
-		return nil, err
-	}
+	var u *user_domain.User
+	var pv *user_domain.UserProvider
+	var pf *user_domain.UserProfile
 
-	// Cria o provider de senha
-	pv := &domain.UserProvider{
-		Provider:     "password",
-		ProviderID:   cmd.Email,
-		PasswordHash: &hash,
-	}
-	err = h.providerRepo.Create(ctx, u.ID, pv)
-	if err != nil {
-		return nil, err
-	}
+	err = h.db.WithTransaction(ctx, func(tx pgx.Tx) error {
+		userRepo := h.userRepo.WithTx(tx)
+		providerRepo := h.providerRepo.WithTx(tx)
+		profileRepo := h.profileRepo.WithTx(tx)
 
-	// Cria o perfil do usuário
-	pf := &domain.UserProfile{
-		Name: cmd.Name,
-	}
-	err = h.profileRepo.Create(ctx, u.ID, pf)
+		u = &user_domain.User{
+			Email: cmd.Email,
+		}
+		if err := userRepo.Create(ctx, u); err != nil {
+			return err
+		}
+
+		pv = &user_domain.UserProvider{
+			Provider:     "password",
+			ProviderID:   cmd.Email,
+			PasswordHash: &hash,
+		}
+		if err := providerRepo.Create(ctx, u.ID, pv); err != nil {
+			return err
+		}
+
+		pf = &user_domain.UserProfile{
+			Name: cmd.Name,
+		}
+		if err := profileRepo.Create(ctx, u.ID, pf); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +98,7 @@ func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserComman
 	return &RegisterUserResponse{
 		ID:    u.ID,
 		Email: u.Email,
-		Profile: domain.UserProfile{
+		Profile: user_domain.UserProfile{
 			Name:      pf.Name,
 			AvatarURL: pf.AvatarURL,
 		},

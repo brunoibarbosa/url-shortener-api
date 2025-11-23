@@ -11,17 +11,23 @@ import (
 )
 
 type UserProviderRepository struct {
-	db *pg.Postgres
+	db pg.Querier
 }
 
-func NewUserProviderRepository(pg *pg.Postgres) *UserProviderRepository {
+func NewUserProviderRepository(postgres *pg.Postgres) *UserProviderRepository {
 	return &UserProviderRepository{
-		db: pg,
+		db: postgres.Pool,
+	}
+}
+
+func (r *UserProviderRepository) WithTx(tx pgx.Tx) domain.UserProviderRepository {
+	return &UserProviderRepository{
+		db: tx,
 	}
 }
 
 func (r *UserProviderRepository) Find(ctx context.Context, provider, providerID string) (*domain.UserProvider, error) {
-	row := r.db.Pool.QueryRow(ctx,
+	row := r.db.QueryRow(ctx,
 		`SELECT id, user_id, password_hash
 		 FROM user_providers p
 		 WHERE p.provider=$1 AND p.provider_id=$2`,
@@ -45,21 +51,8 @@ func (r *UserProviderRepository) Find(ctx context.Context, provider, providerID 
 }
 
 func (r *UserProviderRepository) Create(ctx context.Context, userID uuid.UUID, pv *domain.UserProvider) error {
-	tx, err := r.db.Pool.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		tx.Rollback(ctx)
-		return err
-	}
-
-	err = tx.QueryRow(ctx,
+	return r.db.QueryRow(ctx,
 		"INSERT INTO user_providers (user_id, provider, provider_id, password_hash) VALUES ($1, $2, $3, $4) RETURNING id",
 		userID, pv.Provider, pv.ProviderID, pv.PasswordHash,
 	).Scan(&pv.ID)
-
-	if err != nil {
-		tx.Rollback(ctx)
-		return err
-	}
-
-	return tx.Commit(ctx)
 }

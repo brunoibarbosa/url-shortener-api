@@ -10,31 +10,25 @@ import (
 )
 
 type UserProfileRepository struct {
-	db *pg.Postgres
+	db pg.Querier
 }
 
-func NewUserProfileRepository(pg *pg.Postgres) *UserProfileRepository {
+func NewUserProfileRepository(postgres *pg.Postgres) *UserProfileRepository {
 	return &UserProfileRepository{
-		db: pg,
+		db: postgres.Pool,
+	}
+}
+
+func (r *UserProfileRepository) WithTx(tx pgx.Tx) domain.UserProfileRepository {
+	return &UserProfileRepository{
+		db: tx,
 	}
 }
 
 func (r *UserProfileRepository) Create(ctx context.Context, userID uuid.UUID, pv *domain.UserProfile) error {
-	tx, err := r.db.Pool.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		tx.Rollback(ctx)
-		return err
-	}
-
-	_, err = tx.Exec(ctx,
+	_, err := r.db.Exec(ctx,
 		"INSERT INTO user_profiles (user_id, name, avatar_url) VALUES ($1, $2, $3)",
 		userID, pv.Name, pv.AvatarURL,
 	)
-
-	if err != nil {
-		tx.Rollback(ctx)
-		return err
-	}
-
-	return tx.Commit(ctx)
+	return err
 }
