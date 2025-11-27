@@ -5,14 +5,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 )
 
 type SessionRepository interface {
 	Create(ctx context.Context, s *Session) error
 	FindByRefreshToken(ctx context.Context, hash string) (*Session, error)
 	Revoke(ctx context.Context, id uuid.UUID) error
-	WithTx(tx pgx.Tx) SessionRepository
 }
 
 type BlacklistRepository interface {

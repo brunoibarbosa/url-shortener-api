@@ -6,14 +6,14 @@ import (
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/session/query"
 	"github.com/brunoibarbosa/url-shortener/internal/domain"
-	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ListSessionsHandler struct {
-	db *pg.Postgres
+	db *pgxpool.Pool
 }
 
-func NewListSessionsHandler(pg *pg.Postgres) *ListSessionsHandler {
+func NewListSessionsHandler(pg *pgxpool.Pool) *ListSessionsHandler {
 	return &ListSessionsHandler{
 		db: pg,
 	}
@@ -25,7 +25,7 @@ func (h *ListSessionsHandler) Handle(ctx context.Context, p query.ListSessionsPa
 
 	var count uint64
 	if pagination != "" {
-		if err := h.db.Pool.QueryRow(ctx, `
+		if err := h.db.QueryRow(ctx, `
 			SELECT COUNT(s.id)
 			FROM sessions s
 			WHERE s.revoked_at IS NULL
@@ -35,7 +35,7 @@ func (h *ListSessionsHandler) Handle(ctx context.Context, p query.ListSessionsPa
 		}
 	}
 
-	rows, err := h.db.Pool.Query(ctx, `
+	rows, err := h.db.Query(ctx, `
 		SELECT
 			s.user_agent,
 			s.ip_address,

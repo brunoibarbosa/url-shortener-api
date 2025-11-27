@@ -8,7 +8,6 @@ import (
 	user_domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
 	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
-	"github.com/jackc/pgx/v5"
 )
 
 type LoginUserCommand struct {
@@ -19,7 +18,7 @@ type LoginUserCommand struct {
 }
 
 type LoginUserHandler struct {
-	db                   *pg.Postgres
+	tx                   *pg.TxManager
 	providerRepo         user_domain.UserProviderRepository
 	sessionRepo          session_domain.SessionRepository
 	tokenService         session_domain.TokenService
@@ -28,7 +27,7 @@ type LoginUserHandler struct {
 }
 
 func NewLoginUserHandler(
-	db *pg.Postgres,
+	tx *pg.TxManager,
 	providerRepo user_domain.UserProviderRepository,
 	sessionRepo session_domain.SessionRepository,
 	tokenService session_domain.TokenService,
@@ -36,7 +35,7 @@ func NewLoginUserHandler(
 	accessTokenDuration time.Duration,
 ) *LoginUserHandler {
 	return &LoginUserHandler{
-		db,
+		tx,
 		providerRepo,
 		sessionRepo,
 		tokenService,
@@ -62,9 +61,7 @@ func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (st
 	var sess *session_domain.Session
 	var refreshToken string
 
-	err = h.db.WithTransaction(ctx, func(tx pgx.Tx) error {
-		sessionRepo := h.sessionRepo.WithTx(tx)
-
+	err = h.tx.WithinTransaction(ctx, func(txCtx context.Context) error {
 		refreshTokenObj := h.tokenService.GenerateRefreshToken()
 		refreshToken = refreshTokenObj.String()
 		refreshHash := crypto.HashRefreshToken(refreshToken)
@@ -78,7 +75,7 @@ func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (st
 			IPAddress:        cmd.IPAddress,
 			ExpiresAt:        &expiresAt,
 		}
-		return sessionRepo.Create(ctx, sess)
+		return h.sessionRepo.Create(txCtx, sess)
 	})
 	if err != nil {
 		return "", "", err

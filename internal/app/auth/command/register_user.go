@@ -8,7 +8,6 @@ import (
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
 	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 )
 
 type RegisterUserCommand struct {
@@ -26,15 +25,15 @@ type RegisterUserResponse struct {
 }
 
 type RegisterUserHandler struct {
-	db           *pg.Postgres
+	tx           *pg.TxManager
 	userRepo     user_domain.UserRepository
 	providerRepo user_domain.UserProviderRepository
 	profileRepo  user_domain.UserProfileRepository
 }
 
-func NewRegisterUserHandler(db *pg.Postgres, userRepo user_domain.UserRepository, providerRepo user_domain.UserProviderRepository, profileRepo user_domain.UserProfileRepository) *RegisterUserHandler {
+func NewRegisterUserHandler(tx *pg.TxManager, userRepo user_domain.UserRepository, providerRepo user_domain.UserProviderRepository, profileRepo user_domain.UserProfileRepository) *RegisterUserHandler {
 	return &RegisterUserHandler{
-		db,
+		tx,
 		userRepo,
 		providerRepo,
 		profileRepo,
@@ -60,15 +59,11 @@ func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserComman
 	var pv *user_domain.UserProvider
 	var pf *user_domain.UserProfile
 
-	err = h.db.WithTransaction(ctx, func(tx pgx.Tx) error {
-		userRepo := h.userRepo.WithTx(tx)
-		providerRepo := h.providerRepo.WithTx(tx)
-		profileRepo := h.profileRepo.WithTx(tx)
-
+	err = h.tx.WithinTransaction(ctx, func(txCtx context.Context) error {
 		u = &user_domain.User{
 			Email: cmd.Email,
 		}
-		if err := userRepo.Create(ctx, u); err != nil {
+		if err := h.userRepo.Create(txCtx, u); err != nil {
 			return err
 		}
 
@@ -77,14 +72,14 @@ func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserComman
 			ProviderID:   cmd.Email,
 			PasswordHash: &hash,
 		}
-		if err := providerRepo.Create(ctx, u.ID, pv); err != nil {
+		if err := h.providerRepo.Create(txCtx, u.ID, pv); err != nil {
 			return err
 		}
 
 		pf = &user_domain.UserProfile{
 			Name: cmd.Name,
 		}
-		if err := profileRepo.Create(ctx, u.ID, pf); err != nil {
+		if err := h.profileRepo.Create(txCtx, u.ID, pf); err != nil {
 			return err
 		}
 

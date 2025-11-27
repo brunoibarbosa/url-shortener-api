@@ -15,12 +15,12 @@ func getRouter(postgres *pg.Postgres, redisClient *redis.Client, appConfig AppCo
 		middleware.LocaleMiddleware,
 		middleware.RecoverMiddleware,
 	)
-	http.SetupURLRoutes(r, postgres, redisClient, http.URLRoutesConfig{
+	http.SetupURLRoutes(r, postgres.Pool, redisClient, http.URLRoutesConfig{
 		URLSecret:                    appConfig.Env.URLSecret,
 		URLPersistExpirationDuration: appConfig.Env.URLPersistExpirationDuration,
 		URLCacheExpirationDuration:   appConfig.Env.URLCacheExpirationDuration,
 	})
-	http.SetupAuthRoutes(r, postgres, redisClient, http.AuthRoutesConfig{
+	http.SetupAuthRoutes(r, postgres.Pool, redisClient, http.AuthRoutesConfig{
 		JWTSecret:            appConfig.Env.JWTSecret,
 		GoogleID:             appConfig.Env.GoogleID,
 		GoogleSecret:         appConfig.Env.GoogleSecret,
@@ -28,7 +28,7 @@ func getRouter(postgres *pg.Postgres, redisClient *redis.Client, appConfig AppCo
 		RefreshTokenDuration: appConfig.Env.RefreshTokenDuration,
 		AccessTokenDuration:  appConfig.Env.AccessTokenDuration,
 	})
-	http.SetupSessionRoutes(r, postgres, http.SessionRoutesConfig{
+	http.SetupSessionRoutes(r, postgres.Pool, http.SessionRoutesConfig{
 		JWTSecret: appConfig.Env.JWTSecret,
 	})
 

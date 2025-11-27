@@ -6,7 +6,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -47,27 +46,4 @@ func NewPostgres(postgres PostgresConnection) *Postgres {
 	return &Postgres{
 		Pool: pool,
 	}
-}
-
-func (p *Postgres) WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error {
-	tx, err := p.Pool.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if p := recover(); p != nil {
-			tx.Rollback(ctx)
-			panic(p)
-		}
-	}()
-
-	if err := fn(tx); err != nil {
-		if rbErr := tx.Rollback(ctx); rbErr != nil {
-			return rbErr
-		}
-		return err
-	}
-
-	return tx.Commit(ctx)
 }

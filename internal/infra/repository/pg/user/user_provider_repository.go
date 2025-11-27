@@ -6,28 +6,23 @@ import (
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
+	base "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg/base"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
 type UserProviderRepository struct {
-	db pg.Querier
+	base.BaseRepository
 }
 
-func NewUserProviderRepository(postgres *pg.Postgres) *UserProviderRepository {
+func NewUserProviderRepository(q pg.Querier) *UserProviderRepository {
 	return &UserProviderRepository{
-		db: postgres.Pool,
-	}
-}
-
-func (r *UserProviderRepository) WithTx(tx pgx.Tx) domain.UserProviderRepository {
-	return &UserProviderRepository{
-		db: tx,
+		BaseRepository: base.NewBaseRepository(q),
 	}
 }
 
 func (r *UserProviderRepository) Find(ctx context.Context, provider, providerID string) (*domain.UserProvider, error) {
-	row := r.db.QueryRow(ctx,
+	row := r.Q(ctx).QueryRow(ctx,
 		`SELECT id, user_id, password_hash
 		 FROM user_providers p
 		 WHERE p.provider=$1 AND p.provider_id=$2`,
@@ -51,7 +46,7 @@ func (r *UserProviderRepository) Find(ctx context.Context, provider, providerID 
 }
 
 func (r *UserProviderRepository) Create(ctx context.Context, userID uuid.UUID, pv *domain.UserProvider) error {
-	return r.db.QueryRow(ctx,
+	return r.Q(ctx).QueryRow(ctx,
 		"INSERT INTO user_providers (user_id, provider, provider_id, password_hash) VALUES ($1, $2, $3, $4) RETURNING id",
 		userID, pv.Provider, pv.ProviderID, pv.PasswordHash,
 	).Scan(&pv.ID)

@@ -7,7 +7,6 @@ import (
 	session_domain "github.com/brunoibarbosa/url-shortener/internal/domain/session"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
 	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
-	"github.com/jackc/pgx/v5"
 )
 
 type RefreshTokenCommand struct {
@@ -17,7 +16,7 @@ type RefreshTokenCommand struct {
 }
 
 type RefreshTokenHandler struct {
-	db                   *pg.Postgres
+	tx                   *pg.TxManager
 	sessionRepo          session_domain.SessionRepository
 	blacklistRepo        session_domain.BlacklistRepository
 	tokenService         session_domain.TokenService
@@ -26,7 +25,7 @@ type RefreshTokenHandler struct {
 }
 
 func NewRefreshTokenHandler(
-	db *pg.Postgres,
+	tx *pg.TxManager,
 	sessionRepo session_domain.SessionRepository,
 	blacklistRepo session_domain.BlacklistRepository,
 	tokenService session_domain.TokenService,
@@ -34,7 +33,7 @@ func NewRefreshTokenHandler(
 	accessTokenDuration time.Duration,
 ) *RefreshTokenHandler {
 	return &RefreshTokenHandler{
-		db,
+		tx,
 		sessionRepo,
 		blacklistRepo,
 		tokenService,
@@ -62,15 +61,13 @@ func (h *RefreshTokenHandler) Handle(ctx context.Context, cmd RefreshTokenComman
 	var sess *session_domain.Session
 	var refreshToken string
 
-	err = h.db.WithTransaction(ctx, func(tx pgx.Tx) error {
-		sessionRepo := h.sessionRepo.WithTx(tx)
-
-		if err := sessionRepo.Revoke(ctx, s.ID); err != nil {
+	err = h.tx.WithinTransaction(ctx, func(txCtx context.Context) error {
+		if err := h.sessionRepo.Revoke(txCtx, s.ID); err != nil {
 			return err
 		}
 
 		remainder := time.Until(*s.ExpiresAt)
-		_ = h.blacklistRepo.Revoke(ctx, hashed, remainder)
+		_ = h.blacklistRepo.Revoke(txCtx, hashed, remainder)
 
 		refreshTokenObj := h.tokenService.GenerateRefreshToken()
 		refreshToken = refreshTokenObj.String()
@@ -85,7 +82,7 @@ func (h *RefreshTokenHandler) Handle(ctx context.Context, cmd RefreshTokenComman
 			IPAddress:        cmd.IPAddress,
 			ExpiresAt:        &expiresAt,
 		}
-		return sessionRepo.Create(ctx, sess)
+		return h.sessionRepo.Create(txCtx, sess)
 	})
 	if err != nil {
 		return "", "", err

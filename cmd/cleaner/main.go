@@ -30,7 +30,7 @@ func main() {
 	postgres := pg.NewPostgres(cfg.Env.PostgresConn)
 	defer postgres.Pool.Close()
 
-	repo := pg_repo.NewURLRepository(postgres)
+	repo := pg_repo.NewURLRepository(postgres.Pool)
 
 	task := func() {
 		deleteExpiredURLs(repo)

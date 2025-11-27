@@ -8,7 +8,6 @@ import (
 	user_domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
 	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
-	"github.com/jackc/pgx/v5"
 )
 
 type LoginGoogleCommand struct {
@@ -18,7 +17,7 @@ type LoginGoogleCommand struct {
 }
 
 type LoginGoogleHandler struct {
-	db                   *pg.Postgres
+	txManager            *pg.TxManager
 	provider             session_domain.OAuthProvider
 	userRepo             user_domain.UserRepository
 	providerRepo         user_domain.UserProviderRepository
@@ -30,7 +29,7 @@ type LoginGoogleHandler struct {
 }
 
 func NewLoginGoogleHandler(
-	db *pg.Postgres,
+	txManager *pg.TxManager,
 	provider session_domain.OAuthProvider,
 	userRepo user_domain.UserRepository,
 	providerRepo user_domain.UserProviderRepository,
@@ -41,7 +40,7 @@ func NewLoginGoogleHandler(
 	accessTokenDuration time.Duration,
 ) *LoginGoogleHandler {
 	return &LoginGoogleHandler{
-		db,
+		txManager,
 		provider,
 		userRepo,
 		providerRepo,
@@ -69,19 +68,14 @@ func (h *LoginGoogleHandler) Handle(ctx context.Context, cmd LoginGoogleCommand)
 	var refreshToken string
 
 	if existingProvider == nil {
-		err = h.db.WithTransaction(ctx, func(tx pgx.Tx) error {
-			userRepo := h.userRepo.WithTx(tx)
-			providerRepo := h.providerRepo.WithTx(tx)
-			profileRepo := h.profileRepo.WithTx(tx)
-			sessionRepo := h.sessionRepo.WithTx(tx)
-
-			u, err := userRepo.GetByEmail(ctx, oauthUser.Email)
+		err = h.txManager.WithinTransaction(ctx, func(txCtx context.Context) error {
+			u, err := h.userRepo.GetByEmail(txCtx, oauthUser.Email)
 			if err != nil || u == nil {
 				newUser := &user_domain.User{
 					Email:     oauthUser.Email,
 					CreatedAt: time.Now(),
 				}
-				if err := userRepo.Create(ctx, newUser); err != nil {
+				if err := h.userRepo.Create(txCtx, newUser); err != nil {
 					return err
 				}
 				u = newUser
@@ -92,7 +86,7 @@ func (h *LoginGoogleHandler) Handle(ctx context.Context, cmd LoginGoogleCommand)
 				Provider:   provider,
 				ProviderID: oauthUser.ID,
 			}
-			if err := providerRepo.Create(ctx, u.ID, pv); err != nil {
+			if err := h.providerRepo.Create(txCtx, u.ID, pv); err != nil {
 				return err
 			}
 
@@ -101,7 +95,7 @@ func (h *LoginGoogleHandler) Handle(ctx context.Context, cmd LoginGoogleCommand)
 					Name:      oauthUser.Name,
 					AvatarURL: oauthUser.AvatarURL,
 				}
-				if err := profileRepo.Create(ctx, u.ID, pf); err != nil {
+				if err := h.profileRepo.Create(txCtx, u.ID, pf); err != nil {
 					return err
 				}
 			}
@@ -117,7 +111,7 @@ func (h *LoginGoogleHandler) Handle(ctx context.Context, cmd LoginGoogleCommand)
 				RefreshTokenHash: crypto.HashRefreshToken(refreshToken),
 				ExpiresAt:        &expiresAt,
 			}
-			return sessionRepo.Create(ctx, s)
+			return h.sessionRepo.Create(txCtx, s)
 		})
 		if err != nil {
 			return "", "", err

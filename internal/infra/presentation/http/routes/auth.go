@@ -13,6 +13,7 @@ import (
 	redis_session_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/redis/session"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/service/jwt"
 	handler "github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler/auth"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -25,7 +26,9 @@ type AuthRoutesConfig struct {
 	AccessTokenDuration  time.Duration
 }
 
-func SetupAuthRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, redisClient *redis.Client, config AuthRoutesConfig) {
+func SetupAuthRoutes(r *http_router.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.Client, config AuthRoutesConfig) {
+	txManager := pg.NewTxManager(pgConn)
+
 	userRepo := pg_user_repo.NewUserRepository(pgConn)
 	providerRepo := pg_user_repo.NewUserProviderRepository(pgConn)
 	profileRepo := pg_user_repo.NewUserProfileRepository(pgConn)
@@ -38,7 +41,7 @@ func SetupAuthRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, redisClient 
 	// --------------------------------------------------
 
 	registerHandler := command.NewRegisterUserHandler(
-		pgConn,
+		txManager,
 		userRepo,
 		providerRepo,
 		profileRepo,
@@ -48,7 +51,7 @@ func SetupAuthRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, redisClient 
 	// --------------------------------------------------
 
 	loginUserHandler := command.NewLoginUserHandler(
-		pgConn,
+		txManager,
 		providerRepo,
 		sessionRepo,
 		tokenService,
@@ -65,7 +68,7 @@ func SetupAuthRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, redisClient 
 	// --------------------------------------------------
 
 	loginGoogleHandler := command.NewLoginGoogleHandler(
-		pgConn,
+		txManager,
 		provider,
 		userRepo,
 		providerRepo,
@@ -80,7 +83,7 @@ func SetupAuthRoutes(r *http_router.AppRouter, pgConn *pg.Postgres, redisClient 
 	// --------------------------------------------------
 
 	refreshTokenHandler := command.NewRefreshTokenHandler(
-		pgConn,
+		txManager,
 		sessionRepo,
 		blacklistRepo,
 		tokenService,

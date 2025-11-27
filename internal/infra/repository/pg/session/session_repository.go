@@ -7,28 +7,22 @@ import (
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/session"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
+	base "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg/base"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 )
 
 type SessionRepository struct {
-	db pg.Querier
+	base.BaseRepository
 }
 
-func NewSessionRepository(postgres *pg.Postgres) *SessionRepository {
+func NewSessionRepository(q pg.Querier) *SessionRepository {
 	return &SessionRepository{
-		db: postgres.Pool,
-	}
-}
-
-func (r *SessionRepository) WithTx(tx pgx.Tx) domain.SessionRepository {
-	return &SessionRepository{
-		db: tx,
+		BaseRepository: base.NewBaseRepository(q),
 	}
 }
 
 func (r *SessionRepository) Create(ctx context.Context, s *domain.Session) error {
-	return r.db.QueryRow(
+	return r.Q(ctx).QueryRow(
 		ctx,
 		"INSERT INTO sessions (user_id, refresh_token_hash, user_agent, ip_address, expires_at) VALUES ($1, $2, $3, $4, $5) RETURNING id",
 		s.UserID, s.RefreshTokenHash, s.UserAgent, s.IPAddress, s.ExpiresAt,
@@ -36,7 +30,8 @@ func (r *SessionRepository) Create(ctx context.Context, s *domain.Session) error
 }
 
 func (r *SessionRepository) FindByRefreshToken(ctx context.Context, hash string) (*domain.Session, error) {
-	row := r.db.QueryRow(ctx,
+	row := r.Q(ctx).QueryRow(
+		ctx,
 		`SELECT id, user_id, refresh_token_hash, user_agent, ip_address, expires_at, revoked_at 
 		 FROM sessions 
 		 WHERE refresh_token_hash=$1`,
@@ -55,6 +50,6 @@ func (r *SessionRepository) FindByRefreshToken(ctx context.Context, hash string)
 }
 
 func (r *SessionRepository) Revoke(ctx context.Context, id uuid.UUID) error {
-	_, err := r.db.Exec(ctx, "UPDATE sessions SET revoked_at = NOW() WHERE id = $1", id)
+	_, err := r.Q(ctx).Exec(ctx, "UPDATE sessions SET revoked_at = NOW() WHERE id = $1", id)
 	return err
 }
