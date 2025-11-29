@@ -36,6 +36,7 @@ func NewAuthRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.C
 	profileRepo := pg_user_repo.NewUserProfileRepository(pgConn)
 	sessionRepo := pg_session_repo.NewSessionRepository(pgConn)
 	blacklistRepo := redis_session_repo.NewBlacklistRepository(redisClient)
+	stateRepo := redis_session_repo.NewStateRepository(redisClient)
 
 	provider := oauth_provider.NewGoogleOAuth(config.GoogleID, config.GoogleSecret, fmt.Sprintf("http://%s", config.ListenAddress))
 	tokenService := jwt.NewTokenService(config.JWTSecret)
@@ -69,7 +70,7 @@ func NewAuthRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.C
 
 	// --------------------------------------------------
 
-	redirectGoogleHandler := command.NewRedirectGoogleHandler(provider)
+	redirectGoogleHandler := command.NewRedirectGoogleHandler(provider, stateRepo)
 	redirectGoogleHTTPHandler := http_handler.NewRedirectGoogleHTTPHandler(redirectGoogleHandler)
 
 	// --------------------------------------------------
@@ -83,6 +84,7 @@ func NewAuthRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.C
 		sessionRepo,
 		tokenService,
 		sessionEncrypter,
+		stateRepo,
 		config.RefreshTokenDuration,
 		config.AccessTokenDuration,
 	)

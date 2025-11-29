@@ -12,6 +12,7 @@ import (
 
 type LoginGoogleCommand struct {
 	Code      string
+	State     string
 	UserAgent string
 	IPAddress string
 }
@@ -25,6 +26,7 @@ type LoginGoogleHandler struct {
 	sessionRepo          session_domain.SessionRepository
 	tokenService         session_domain.TokenService
 	sessionEncrypter     session_domain.SessionEncrypter
+	stateService         session_domain.StateService
 	refreshTokenDuration time.Duration
 	accessTokenDuration  time.Duration
 }
@@ -38,6 +40,7 @@ func NewLoginGoogleHandler(
 	sessionRepo session_domain.SessionRepository,
 	tokenService session_domain.TokenService,
 	sessionEncrypter session_domain.SessionEncrypter,
+	stateService session_domain.StateService,
 	refreshTokenDuration time.Duration,
 	accessTokenDuration time.Duration,
 ) *LoginGoogleHandler {
@@ -50,6 +53,7 @@ func NewLoginGoogleHandler(
 		sessionRepo,
 		tokenService,
 		sessionEncrypter,
+		stateService,
 		refreshTokenDuration,
 		accessTokenDuration,
 	}
@@ -59,6 +63,12 @@ func (h *LoginGoogleHandler) Handle(ctx context.Context, cmd LoginGoogleCommand)
 	if cmd.Code == "" {
 		return "", "", session_domain.ErrInvalidOAuthCode
 	}
+
+	if err := h.stateService.ValidateState(ctx, cmd.State); err != nil {
+		return "", "", err
+	}
+
+	defer h.stateService.DeleteState(ctx, cmd.State)
 
 	oauthUser, err := h.provider.ExchangeCode(ctx, cmd.Code)
 	if err != nil {

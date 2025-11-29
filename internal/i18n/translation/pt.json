@@ -37,5 +37,8 @@
   "error.session.invalid_access_token": "O token de acesso é inválido ou expirou",
   "error.session.missing_refresh_token": "Token de atualização ausente",
   "error.session.missing_access_token": "Token de acesso ausente",
-  "error.session.generate_refresh_token": "Falha ao gerar um novo token de autenticação"
+  "error.session.generate_refresh_token": "Falha ao gerar um novo token de autenticação",
+  "error.session.invalid_state": "Estado de autenticação inválido ou expirado. Por favor, tente novamente",
+
+  "error.redirect.failed": "Falha ao gerar URL de redirecionamento de autenticação"
 }

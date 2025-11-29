@@ -20,16 +20,19 @@ func NewURLCacheRepository(client *redis.Client) *URLCacheRepository {
 }
 
 func (r *URLCacheRepository) Exists(ctx context.Context, shortCode string) (bool, error) {
-	exists, err := r.client.Exists(ctx, r.getKey(shortCode)).Result()
+	key := r.getKey(shortCode)
+	exists, err := r.client.Exists(ctx, key).Result()
 	return exists > 0, err
 }
 
 func (r *URLCacheRepository) Save(ctx context.Context, url *domain.URL, expires time.Duration) error {
-	return r.client.Set(ctx, url.ShortCode, url.EncryptedURL, expires).Err()
+	key := r.getKey(url.ShortCode)
+	return r.client.Set(ctx, key, url.EncryptedURL, expires).Err()
 }
 
 func (r *URLCacheRepository) FindByShortCode(ctx context.Context, shortCode string) (*domain.URL, error) {
-	encryptedUrl, err := r.client.Get(ctx, shortCode).Result()
+	key := r.getKey(shortCode)
+	encryptedUrl, err := r.client.Get(ctx, key).Result()
 
 	if err != nil {
 		if err == redis.Nil {
@@ -46,9 +49,11 @@ func (r *URLCacheRepository) FindByShortCode(ctx context.Context, shortCode stri
 }
 
 func (r *URLCacheRepository) Delete(ctx context.Context, shortCode string) error {
-	return r.client.Del(ctx, r.getKey(shortCode)).Err()
+	key := r.getKey(shortCode)
+	return r.client.Del(ctx, key).Err()
 }
 
 func (r *URLCacheRepository) getKey(shortCode string) string {
-	return fmt.Sprintf("url:short_code:%s", shortCode)
+	key := fmt.Sprintf("url:short_code:%s", shortCode)
+	return key
 }

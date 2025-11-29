@@ -7,16 +7,26 @@ import (
 )
 
 type RedirectGoogleHandler struct {
-	provider session_domain.OAuthProvider
+	provider     session_domain.OAuthProvider
+	stateService session_domain.StateService
 }
 
-func NewRedirectGoogleHandler(provider session_domain.OAuthProvider) *RedirectGoogleHandler {
+func NewRedirectGoogleHandler(
+	provider session_domain.OAuthProvider,
+	stateService session_domain.StateService,
+) *RedirectGoogleHandler {
 	return &RedirectGoogleHandler{
-		provider: provider,
+		provider:     provider,
+		stateService: stateService,
 	}
 }
 
-func (h *RedirectGoogleHandler) Handle(ctx context.Context) string {
-	url := h.provider.GetAuthURL("state-token")
-	return url
+func (h *RedirectGoogleHandler) Handle(ctx context.Context) (string, error) {
+	state, err := h.stateService.GenerateState(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	url := h.provider.GetAuthURL(state)
+	return url, nil
 }
