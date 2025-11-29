@@ -37,7 +37,7 @@ func (r *UserProviderRepository) Find(ctx context.Context, provider, providerID 
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return nil, domain.ErrNotFound
 		}
 		return nil, err
 	}

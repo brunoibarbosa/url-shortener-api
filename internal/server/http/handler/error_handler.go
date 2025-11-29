@@ -9,10 +9,10 @@ import (
 )
 
 type ErrorDetail struct {
-	Code    string        `json:"code"`
-	SubCode string        `json:"sub_code"`
-	Message string        `json:"message"`
-	Details []interface{} `json:"details,omitempty"`
+	Code    string `json:"code"`
+	SubCode string `json:"sub_code"`
+	Message string `json:"message"`
+	Details []any  `json:"details,omitempty"`
 }
 
 type ErrorResponse struct {
@@ -24,7 +24,7 @@ type HTTPError struct {
 	Code    string
 	SubCode string
 	Message string
-	Details []interface{}
+	Details []any
 }
 
 func (e *HTTPError) Error() string {
@@ -32,7 +32,7 @@ func (e *HTTPError) Error() string {
 }
 
 func NewI18nHTTPError(ctx context.Context, status int, code, messageID string, details ErrorDetails) *HTTPError {
-	var detailsArray []interface{}
+	var detailsArray []any
 	if details != nil {
 		detailsArray = details.ToArray()
 	}
@@ -46,7 +46,7 @@ func NewI18nHTTPError(ctx context.Context, status int, code, messageID string, d
 }
 
 func WriteI18nJSONError(ctx context.Context, w http.ResponseWriter, status int, code string, messageID string, details ErrorDetails) {
-	var detailsArray []interface{}
+	var detailsArray []any
 	if details != nil {
 		detailsArray = details.ToArray()
 	}
@@ -67,7 +67,7 @@ func WriteJSONError(w http.ResponseWriter, status int, code, message, subCode st
 	WriteJSONErrorWithDetails(w, status, code, message, subCode, nil)
 }
 
-func WriteJSONErrorWithDetails(w http.ResponseWriter, status int, code, message, subCode string, details []interface{}) {
+func WriteJSONErrorWithDetails(w http.ResponseWriter, status int, code, message, subCode string, details []any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 

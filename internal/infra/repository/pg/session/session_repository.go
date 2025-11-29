@@ -41,7 +41,7 @@ func (r *SessionRepository) FindByRefreshToken(ctx context.Context, hash string)
 	s := &domain.Session{}
 	if err := row.Scan(&s.ID, &s.UserID, &s.RefreshTokenHash, &s.UserAgent, &s.IPAddress, &s.ExpiresAt, &s.RevokedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("not found")
+			return nil, domain.ErrNotFound
 		}
 		return nil, err
 	}

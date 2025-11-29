@@ -52,7 +52,7 @@ func DetectLanguage(r *http.Request) string {
 	return lang
 }
 
-func T(ctx context.Context, messageID string, templateData map[string]interface{}) string {
+func T(ctx context.Context, messageID string, templateData map[string]any) string {
 	localizer := LocalizerFromContext(ctx)
 	msg, err := localizer.Localize(&i18n.LocalizeConfig{
 		MessageID:    messageID,

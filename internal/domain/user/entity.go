@@ -18,6 +18,7 @@ var (
 	ErrPasswordMissingDigit  = errors.New("password must contain at least one digit")
 	ErrPasswordMissingSymbol = errors.New("password must contain at least one special character")
 	ErrCreatingUser          = errors.New("error creating user")
+	ErrNotFound              = errors.New("user not found")
 )
 
 type User struct {
@@ -41,3 +42,6 @@ type UserProvider struct {
 	ProviderID   string
 	PasswordHash *string
 }
+
+var ProviderPassword = "password"
+var ProviderGoogle = "google"

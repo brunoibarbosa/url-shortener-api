@@ -13,6 +13,7 @@
   "error.details.parameter_invalid_sort": "Campo de ordenação inválido",
 
   "error.url.expired_url": "Esta URL encurtada expirou e não está mais acessível",
+  "error.url.required_short_code": "O código curto é obrigatório",
   "error.details.url.missing_scheme": "URL deve começar com http:// ou https://",
   "error.details.url.invalid_format": "Formato de URL inválido",
   "error.details.shortcode.not_found": "URL encurtada não encontrada",

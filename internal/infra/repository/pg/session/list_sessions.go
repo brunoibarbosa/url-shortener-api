@@ -1,4 +1,4 @@
-package query
+package pg_repo
 
 import (
 	"context"
@@ -9,17 +9,17 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type ListSessionsHandler struct {
+type ListSessionsRepository struct {
 	db *pgxpool.Pool
 }
 
-func NewListSessionsHandler(pg *pgxpool.Pool) *ListSessionsHandler {
-	return &ListSessionsHandler{
+func NewListSessionsRepository(pg *pgxpool.Pool) *ListSessionsRepository {
+	return &ListSessionsRepository{
 		db: pg,
 	}
 }
 
-func (h *ListSessionsHandler) Handle(ctx context.Context, p query.ListSessionsParams) ([]query.ListSessionsDTO, uint64, error) {
+func (h *ListSessionsRepository) Handle(ctx context.Context, p query.ListSessionsParams) ([]query.ListSessionsDTO, uint64, error) {
 	pagination := h.getPagination(p)
 	sort := h.getOrderByField(p)
 
@@ -72,7 +72,7 @@ func (h *ListSessionsHandler) Handle(ctx context.Context, p query.ListSessionsPa
 	return sessions, count, nil
 }
 
-func (*ListSessionsHandler) getOrderByField(p query.ListSessionsParams) string {
+func (*ListSessionsRepository) getOrderByField(p query.ListSessionsParams) string {
 	sortBy := ""
 	switch p.SortBy {
 	case query.ListSessionsSortByUserAgent:
@@ -96,7 +96,7 @@ func (*ListSessionsHandler) getOrderByField(p query.ListSessionsParams) string {
 	return fmt.Sprintf(" ORDER BY %s %s", sortBy, sortKind)
 }
 
-func (*ListSessionsHandler) getPagination(p query.ListSessionsParams) string {
+func (*ListSessionsRepository) getPagination(p query.ListSessionsParams) string {
 	if p.Pagination.Size <= 0 {
 		return ""
 	}

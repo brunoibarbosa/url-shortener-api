@@ -2,12 +2,12 @@ package command
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	bd_domain "github.com/brunoibarbosa/url-shortener/internal/domain/bd"
 	session_domain "github.com/brunoibarbosa/url-shortener/internal/domain/session"
 	user_domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
-	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
-	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
 )
 
 type LoginUserCommand struct {
@@ -18,19 +18,23 @@ type LoginUserCommand struct {
 }
 
 type LoginUserHandler struct {
-	tx                   *pg.TxManager
+	tx                   bd_domain.TransactionManager
 	providerRepo         user_domain.UserProviderRepository
 	sessionRepo          session_domain.SessionRepository
 	tokenService         session_domain.TokenService
+	passwordEncrypter    user_domain.UserPasswordEncrypter
+	sessionEncrypter     session_domain.SessionEncrypter
 	refreshTokenDuration time.Duration
 	accessTokenDuration  time.Duration
 }
 
 func NewLoginUserHandler(
-	tx *pg.TxManager,
+	tx bd_domain.TransactionManager,
 	providerRepo user_domain.UserProviderRepository,
 	sessionRepo session_domain.SessionRepository,
 	tokenService session_domain.TokenService,
+	passwordEncrypter user_domain.UserPasswordEncrypter,
+	sessionEncrypter session_domain.SessionEncrypter,
 	refreshTokenDuration time.Duration,
 	accessTokenDuration time.Duration,
 ) *LoginUserHandler {
@@ -39,22 +43,33 @@ func NewLoginUserHandler(
 		providerRepo,
 		sessionRepo,
 		tokenService,
+		passwordEncrypter,
+		sessionEncrypter,
 		refreshTokenDuration,
 		accessTokenDuration,
 	}
 }
 
 func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (string, string, error) {
-	u, err := h.providerRepo.Find(ctx, "password", cmd.Email)
+	if cmd.Email == "" || cmd.Password == "" {
+		return "", "", user_domain.ErrInvalidCredentials
+	}
+
+	u, err := h.providerRepo.Find(ctx, user_domain.ProviderPassword, cmd.Email)
 	if err != nil {
-		return "", "", err
+		switch {
+		case errors.Is(err, user_domain.ErrNotFound):
+			return "", "", user_domain.ErrInvalidCredentials
+		default:
+			return "", "", err
+		}
 	}
 
 	if u == nil {
 		return "", "", user_domain.ErrInvalidCredentials
 	}
 
-	if !crypto.CheckPassword(cmd.Password, *u.PasswordHash) {
+	if !h.passwordEncrypter.CheckPassword(*u.PasswordHash, cmd.Password) {
 		return "", "", user_domain.ErrInvalidCredentials
 	}
 
@@ -64,7 +79,7 @@ func (h *LoginUserHandler) Handle(ctx context.Context, cmd LoginUserCommand) (st
 	err = h.tx.WithinTransaction(ctx, func(txCtx context.Context) error {
 		refreshTokenObj := h.tokenService.GenerateRefreshToken()
 		refreshToken = refreshTokenObj.String()
-		refreshHash := crypto.HashRefreshToken(refreshToken)
+		refreshHash := h.sessionEncrypter.HashRefreshToken(refreshToken)
 
 		expiresAt := time.Now().Add(h.refreshTokenDuration)
 

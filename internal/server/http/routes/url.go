@@ -6,6 +6,8 @@ import (
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
 	pg_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg/url"
 	redis_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/redis/url"
+	"github.com/brunoibarbosa/url-shortener/internal/infra/service/crypto"
+	"github.com/brunoibarbosa/url-shortener/internal/infra/service/shortcode"
 	"github.com/brunoibarbosa/url-shortener/internal/server/http"
 	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler/url"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,13 +23,16 @@ type URLRoutesConfig struct {
 func NewURLRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.Client, config URLRoutesConfig) {
 	repo := pg_repo.NewURLRepository(pgConn)
 	cache := redis_repo.NewURLCacheRepository(redisClient)
+	encrypter := crypto.NewURLEncrypter(config.URLSecret)
+	shortCodeGenerator := shortcode.NewRandomShortCodeGenerator()
 
 	// --------------------------------------------------
 
 	createHandler := command.NewCreateShortURLHandler(
 		repo,
 		cache,
-		config.URLSecret,
+		encrypter,
+		shortCodeGenerator,
 		config.URLPersistExpirationDuration,
 		config.URLCacheExpirationDuration,
 	)
@@ -38,7 +43,7 @@ func NewURLRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.Cl
 	getHandler := command.NewGetOriginalURLHandler(
 		repo,
 		cache,
-		config.URLSecret,
+		encrypter,
 		config.URLCacheExpirationDuration,
 	)
 	redirectHTTPHandler := http_handler.NewRedirectHTTPHandler(getHandler)
@@ -46,5 +51,5 @@ func NewURLRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.Cl
 	// --------------------------------------------------
 
 	r.Post("/url/shorten", createHTTPHandler.Handle)
-	r.Get("/{shortCode}", redirectHTTPHandler.Handle)
+	r.Get("/r/{shortCode}", redirectHTTPHandler.Handle)
 }

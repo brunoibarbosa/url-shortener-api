@@ -46,7 +46,7 @@ func (h *RefreshTokenHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 		UserAgent:    r.UserAgent(),
 		IPAddress:    r.RemoteAddr,
 	}
-	accessToken, refreshToken, handleErr := h.cmd.Handle(r.Context(), appCmd)
+	response, handleErr := h.cmd.Handle(r.Context(), appCmd)
 	if handleErr != nil {
 		switch {
 		case err.Is(handleErr, sd.ErrInvalidRefreshToken):
@@ -60,7 +60,7 @@ func (h *RefreshTokenHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
-		Value:    refreshToken,
+		Value:    response.RefreshToken,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   true,
@@ -68,13 +68,13 @@ func (h *RefreshTokenHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 		MaxAge:   int(h.refreshTokenDuration.Seconds()),
 	})
 
-	response := RefreshToken200Response{
-		AccessToken: accessToken,
+	responseBody := RefreshToken200Response{
+		AccessToken: response.AccessToken,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	if encodeErr := json.NewEncoder(w).Encode(response); encodeErr != nil {
+	if encodeErr := json.NewEncoder(w).Encode(responseBody); encodeErr != nil {
 		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
 	}
 

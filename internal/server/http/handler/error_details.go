@@ -7,23 +7,23 @@ import (
 )
 
 type ErrorDetails interface {
-	ToArray() []interface{}
+	ToArray() []any
 }
 
 type SingleDetail struct {
-	data map[string]interface{}
+	data map[string]any
 }
 
-func (d SingleDetail) ToArray() []interface{} {
-	return []interface{}{d.data}
+func (d SingleDetail) ToArray() []any {
+	return []any{d.data}
 }
 
 type MultipleDetails struct {
-	items []map[string]interface{}
+	items []map[string]any
 }
 
-func (d MultipleDetails) ToArray() []interface{} {
-	result := make([]interface{}, len(d.items))
+func (d MultipleDetails) ToArray() []any {
+	result := make([]any, len(d.items))
 	for i, item := range d.items {
 		result[i] = item
 	}
@@ -39,7 +39,7 @@ type ValidationError struct {
 func Detail(ctx context.Context, field, messageID string) ErrorDetails {
 	message := myi18n.T(ctx, messageID, nil)
 
-	return SingleDetail{data: map[string]interface{}{
+	return SingleDetail{data: map[string]any{
 		"field":    field,
 		"message":  message,
 		"sub_code": messageID,
@@ -47,9 +47,9 @@ func Detail(ctx context.Context, field, messageID string) ErrorDetails {
 }
 
 func ValidationErrors(errors []ValidationError) ErrorDetails {
-	items := make([]map[string]interface{}, len(errors))
+	items := make([]map[string]any, len(errors))
 	for i, err := range errors {
-		items[i] = map[string]interface{}{
+		items[i] = map[string]any{
 			"field":    err.Field,
 			"message":  err.Message,
 			"sub_code": err.SubCode,

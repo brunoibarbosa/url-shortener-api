@@ -13,6 +13,7 @@
   "error.details.parameter_invalid_sort": "Invalid sort field",
 
   "error.url.expired_url": "This shortened URL has expired and is no longer accessible",
+  "error.url.required_short_code": "Short code is required",
   "error.details.url.missing_scheme": "URL must start with http:// or https://",
   "error.details.url.invalid_format": "Invalid URL format",
   "error.details.shortcode.not_found": "Short URL not found",

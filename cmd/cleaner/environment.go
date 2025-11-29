@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/config"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
+	"github.com/brunoibarbosa/url-shortener/pkg/env"
 	"github.com/joho/godotenv"
 )
 
@@ -27,14 +27,14 @@ func LoadAppConfig() AppConfig {
 	return AppConfig{
 		Env: Environment{
 			PostgresConn: pg.PostgresConnection{
-				Host:     config.MustEnv("DB_HOST"),
-				User:     config.MustEnv("DB_USER"),
-				Password: config.MustEnv("DB_PASSWORD"),
-				Name:     config.MustEnv("DB_NAME"),
-				Port:     config.MustEnvAsInt("DB_PORT"),
+				Host:     env.MustEnv("DB_HOST"),
+				User:     env.MustEnv("DB_USER"),
+				Password: env.MustEnv("DB_PASSWORD"),
+				Name:     env.MustEnv("DB_NAME"),
+				Port:     env.MustEnvAsInt("DB_PORT"),
 			},
 
-			ExpiredURLCleanupInterval: config.MustEnvAsDuration("EXPIRED_URL_CLEANUP_INTERVAL"),
+			ExpiredURLCleanupInterval: env.MustEnvAsDuration("EXPIRED_URL_CLEANUP_INTERVAL"),
 		},
 	}
 }

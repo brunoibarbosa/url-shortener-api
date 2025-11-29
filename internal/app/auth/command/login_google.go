@@ -2,12 +2,12 @@ package command
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	bd_domain "github.com/brunoibarbosa/url-shortener/internal/domain/bd"
 	session_domain "github.com/brunoibarbosa/url-shortener/internal/domain/session"
 	user_domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
-	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
-	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
 )
 
 type LoginGoogleCommand struct {
@@ -17,25 +17,27 @@ type LoginGoogleCommand struct {
 }
 
 type LoginGoogleHandler struct {
-	txManager            *pg.TxManager
+	txManager            bd_domain.TransactionManager
 	provider             session_domain.OAuthProvider
 	userRepo             user_domain.UserRepository
 	providerRepo         user_domain.UserProviderRepository
 	profileRepo          user_domain.UserProfileRepository
 	sessionRepo          session_domain.SessionRepository
 	tokenService         session_domain.TokenService
+	sessionEncrypter     session_domain.SessionEncrypter
 	refreshTokenDuration time.Duration
 	accessTokenDuration  time.Duration
 }
 
 func NewLoginGoogleHandler(
-	txManager *pg.TxManager,
+	txManager bd_domain.TransactionManager,
 	provider session_domain.OAuthProvider,
 	userRepo user_domain.UserRepository,
 	providerRepo user_domain.UserProviderRepository,
 	profileRepo user_domain.UserProfileRepository,
 	sessionRepo session_domain.SessionRepository,
 	tokenService session_domain.TokenService,
+	sessionEncrypter session_domain.SessionEncrypter,
 	refreshTokenDuration time.Duration,
 	accessTokenDuration time.Duration,
 ) *LoginGoogleHandler {
@@ -47,95 +49,101 @@ func NewLoginGoogleHandler(
 		profileRepo,
 		sessionRepo,
 		tokenService,
+		sessionEncrypter,
 		refreshTokenDuration,
 		accessTokenDuration,
 	}
 }
 
 func (h *LoginGoogleHandler) Handle(ctx context.Context, cmd LoginGoogleCommand) (string, string, error) {
-	provider := "google"
+	if cmd.Code == "" {
+		return "", "", session_domain.ErrInvalidOAuthCode
+	}
+
 	oauthUser, err := h.provider.ExchangeCode(ctx, cmd.Code)
 	if err != nil {
 		return "", "", err
 	}
 
-	existingProvider, err := h.providerRepo.Find(ctx, provider, oauthUser.ID)
+	var session *session_domain.Session
+	var refreshToken string
+
+	err = h.txManager.WithinTransaction(ctx, func(txCtx context.Context) error {
+		existingProvider, err := h.providerRepo.Find(txCtx, user_domain.ProviderGoogle, oauthUser.ID)
+		if err != nil {
+			switch {
+			case errors.Is(err, user_domain.ErrNotFound):
+				existingProvider = nil
+			default:
+				return err
+			}
+		}
+
+		var user *user_domain.User
+
+		if existingProvider != nil {
+			user, err = h.userRepo.GetByID(txCtx, existingProvider.UserID)
+			if err != nil {
+				return err
+			}
+		} else {
+			user, err = h.userRepo.GetByEmail(txCtx, oauthUser.Email)
+			if err != nil && err != user_domain.ErrNotFound {
+				return err
+			}
+			if user == nil {
+				user = &user_domain.User{
+					Email: oauthUser.Email,
+				}
+				if err := h.userRepo.Create(txCtx, user); err != nil {
+					return user_domain.ErrCreatingUser
+				}
+			}
+
+			providerEntry := &user_domain.UserProvider{
+				UserID:     user.ID,
+				Provider:   user_domain.ProviderGoogle,
+				ProviderID: oauthUser.ID,
+			}
+			if err := h.providerRepo.Create(txCtx, user.ID, providerEntry); err != nil {
+				return err
+			}
+
+			if oauthUser.Name != "" {
+				profile := &user_domain.UserProfile{
+					Name:      oauthUser.Name,
+					AvatarURL: oauthUser.AvatarURL,
+				}
+				if err := h.profileRepo.Create(txCtx, user.ID, profile); err != nil {
+					return err
+				}
+			}
+		}
+
+		refreshTokenObj := h.tokenService.GenerateRefreshToken()
+		refreshToken = refreshTokenObj.String()
+		refreshHash := h.sessionEncrypter.HashRefreshToken(refreshToken)
+
+		expiresAt := time.Now().Add(h.refreshTokenDuration)
+
+		session = &session_domain.Session{
+			UserID:           user.ID,
+			UserAgent:        cmd.UserAgent,
+			IPAddress:        cmd.IPAddress,
+			RefreshTokenHash: refreshHash,
+			ExpiresAt:        &expiresAt,
+		}
+
+		return h.sessionRepo.Create(txCtx, session)
+	})
+
 	if err != nil {
 		return "", "", err
 	}
 
-	var s *session_domain.Session
-	var refreshToken string
-
-	if existingProvider == nil {
-		err = h.txManager.WithinTransaction(ctx, func(txCtx context.Context) error {
-			u, err := h.userRepo.GetByEmail(txCtx, oauthUser.Email)
-			if err != nil || u == nil {
-				newUser := &user_domain.User{
-					Email:     oauthUser.Email,
-					CreatedAt: time.Now(),
-				}
-				if err := h.userRepo.Create(txCtx, newUser); err != nil {
-					return err
-				}
-				u = newUser
-			}
-
-			pv := &user_domain.UserProvider{
-				UserID:     u.ID,
-				Provider:   provider,
-				ProviderID: oauthUser.ID,
-			}
-			if err := h.providerRepo.Create(txCtx, u.ID, pv); err != nil {
-				return err
-			}
-
-			if u.Profile == nil && (oauthUser.Name != "") {
-				pf := &user_domain.UserProfile{
-					Name:      oauthUser.Name,
-					AvatarURL: oauthUser.AvatarURL,
-				}
-				if err := h.profileRepo.Create(txCtx, u.ID, pf); err != nil {
-					return err
-				}
-			}
-
-			refreshTokenObj := h.tokenService.GenerateRefreshToken()
-			refreshToken = refreshTokenObj.String()
-			expiresAt := time.Now().Add(h.refreshTokenDuration)
-
-			s = &session_domain.Session{
-				UserID:           u.ID,
-				UserAgent:        cmd.UserAgent,
-				IPAddress:        cmd.IPAddress,
-				RefreshTokenHash: crypto.HashRefreshToken(refreshToken),
-				ExpiresAt:        &expiresAt,
-			}
-			return h.sessionRepo.Create(txCtx, s)
-		})
-		if err != nil {
-			return "", "", err
-		}
-	} else {
-		refreshTokenObj := h.tokenService.GenerateRefreshToken()
-		refreshToken = refreshTokenObj.String()
-		expiresAt := time.Now().Add(h.refreshTokenDuration)
-
-		s = &session_domain.Session{
-			UserID:           existingProvider.UserID,
-			UserAgent:        cmd.UserAgent,
-			IPAddress:        cmd.IPAddress,
-			RefreshTokenHash: crypto.HashRefreshToken(refreshToken),
-			ExpiresAt:        &expiresAt,
-		}
-		if err := h.sessionRepo.Create(ctx, s); err != nil {
-			return "", "", err
-		}
-	}
-
 	accessToken, err := h.tokenService.GenerateAccessToken(&session_domain.TokenParams{
-		UserID:    s.UserID,
-		SessionID: s.ID,
+		UserID:    session.UserID,
+		SessionID: session.ID,
 		Duration:  h.accessTokenDuration,
 	})
 	if err != nil {

@@ -7,8 +7,9 @@ import (
 )
 
 type UserRepository interface {
-	Exists(ctx context.Context, email string) (bool, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
+	Exists(ctx context.Context, email string) (bool, error)
 	Create(ctx context.Context, u *User) error
 }
 

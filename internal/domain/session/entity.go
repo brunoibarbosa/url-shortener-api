@@ -11,6 +11,7 @@ var (
 	ErrInvalidRefreshToken = errors.New("invalid or expired refresh token")
 	ErrNotFound            = errors.New("session not found")
 	ErrRevokeFailed        = errors.New("failed to revoke token")
+	ErrInvalidOAuthCode    = errors.New("invalid OAuth code")
 )
 
 type Session struct {

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
-	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
 	"github.com/brunoibarbosa/url-shortener/pkg/util"
 )
 
@@ -16,15 +15,20 @@ type GetOriginalURLQuery struct {
 type GetOriginalURLHandler struct {
 	persistRepo             domain.URLRepository
 	cacheRepo               domain.URLCacheRepository
-	decryptSecretKey        string
+	encrypter               domain.URLEncrypter
 	cacheExpirationDuration time.Duration
 }
 
-func NewGetOriginalURLHandler(repo domain.URLRepository, cache domain.URLCacheRepository, secretKey string, cacheExpirationDuration time.Duration) *GetOriginalURLHandler {
+func NewGetOriginalURLHandler(
+	repo domain.URLRepository,
+	cache domain.URLCacheRepository,
+	encrypter domain.URLEncrypter,
+	cacheExpirationDuration time.Duration,
+) *GetOriginalURLHandler {
 	return &GetOriginalURLHandler{
 		persistRepo:             repo,
 		cacheRepo:               cache,
-		decryptSecretKey:        secretKey,
+		encrypter:               encrypter,
 		cacheExpirationDuration: cacheExpirationDuration,
 	}
 }
@@ -35,7 +39,10 @@ func (h *GetOriginalURLHandler) Handle(ctx context.Context, query GetOriginalURL
 		return "", err
 	}
 	if cachedUrl != nil {
-		decryptedUrl := crypto.DecryptURL(cachedUrl.EncryptedURL, h.decryptSecretKey)
+		decryptedUrl, err := h.encrypter.Decrypt(cachedUrl.EncryptedURL)
+		if err != nil {
+			return "", err
+		}
 		return decryptedUrl, nil
 	}
 
@@ -51,11 +58,14 @@ func (h *GetOriginalURLHandler) Handle(ctx context.Context, query GetOriginalURL
 
 	cacheDuration := h.cacheExpirationDuration
 	if url.ExpiresAt != nil {
-		timeRemainingToExpire := url.ExpiresAt.UTC().Sub(time.Now().UTC())
+		timeRemainingToExpire := url.RemainingTTL(time.Now().UTC())
 		cacheDuration = util.MinTimeDuration(timeRemainingToExpire, h.cacheExpirationDuration)
 	}
-	h.cacheRepo.Save(ctx, url, cacheDuration)
+	_ = h.cacheRepo.Save(ctx, url, cacheDuration)
 
-	decryptedUrl := crypto.DecryptURL(url.EncryptedURL, h.decryptSecretKey)
+	decryptedUrl, err := h.encrypter.Decrypt(url.EncryptedURL)
+	if err != nil {
+		return "", err
+	}
 	return decryptedUrl, nil
 }

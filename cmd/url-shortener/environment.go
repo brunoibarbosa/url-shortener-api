@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/config"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
+	"github.com/brunoibarbosa/url-shortener/pkg/env"
 	"github.com/joho/godotenv"
 )
 
@@ -41,30 +41,30 @@ func LoadAppConfig() AppConfig {
 
 	return AppConfig{
 		Env: Environment{
-			URLSecret:    config.MustEnv("URL_SECRET"),
-			JWTSecret:    config.MustEnv("JWT_SECRET"),
-			GoogleID:     config.MustEnv("GOOGLE_CLIENT_ID"),
-			GoogleSecret: config.MustEnv("GOOGLE_CLIENT_SECRET"),
+			URLSecret:    env.MustEnv("URL_SECRET"),
+			JWTSecret:    env.MustEnv("JWT_SECRET"),
+			GoogleID:     env.MustEnv("GOOGLE_CLIENT_ID"),
+			GoogleSecret: env.MustEnv("GOOGLE_CLIENT_SECRET"),
 
 			PostgresConn: pg.PostgresConnection{
-				Host:     config.MustEnv("DB_HOST"),
-				User:     config.MustEnv("DB_USER"),
-				Password: config.MustEnv("DB_PASSWORD"),
-				Name:     config.MustEnv("DB_NAME"),
-				Port:     config.MustEnvAsInt("DB_PORT"),
+				Host:     env.MustEnv("DB_HOST"),
+				User:     env.MustEnv("DB_USER"),
+				Password: env.MustEnv("DB_PASSWORD"),
+				Name:     env.MustEnv("DB_NAME"),
+				Port:     env.MustEnvAsInt("DB_PORT"),
 			},
 
-			RedisAddress:  config.MustEnv("REDIS_ADDRESS"),
-			RedisPassword: config.GetEnvWithDefault("REDIS_PASSWORD", ""),
-			RedisDB:       config.GetEnvAsInt("REDIS_DB", 0),
+			RedisAddress:  env.MustEnv("REDIS_ADDRESS"),
+			RedisPassword: env.GetEnvWithDefault("REDIS_PASSWORD", ""),
+			RedisDB:       env.GetEnvAsInt("REDIS_DB", 0),
 
-			URLPersistExpirationDuration: config.MustEnvAsDuration("URL_PERSIST_EXPIRATION_DURATION"),
-			URLCacheExpirationDuration:   config.MustEnvAsDuration("URL_CACHE_EXPIRATION_DURATION"),
+			URLPersistExpirationDuration: env.MustEnvAsDuration("URL_PERSIST_EXPIRATION_DURATION"),
+			URLCacheExpirationDuration:   env.MustEnvAsDuration("URL_CACHE_EXPIRATION_DURATION"),
 
-			RefreshTokenDuration: config.MustEnvAsDuration("REFRESH_TOKEN_DURATION"),
-			AccessTokenDuration:  config.MustEnvAsDuration("ACCESS_TOKEN_DURATION"),
+			RefreshTokenDuration: env.MustEnvAsDuration("REFRESH_TOKEN_DURATION"),
+			AccessTokenDuration:  env.MustEnvAsDuration("ACCESS_TOKEN_DURATION"),
 
-			ListenAddress: config.MustEnv("LISTEN_ADDRESS"),
+			ListenAddress: env.MustEnv("LISTEN_ADDRESS"),
 		},
 	}
 }

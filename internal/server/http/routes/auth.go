@@ -10,11 +10,13 @@ import (
 	pg_session_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg/session"
 	pg_user_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg/user"
 	redis_session_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/redis/session"
+	"github.com/brunoibarbosa/url-shortener/internal/infra/service/crypto"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/service/jwt"
 	"github.com/brunoibarbosa/url-shortener/internal/server/http"
 	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler/auth"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthRoutesConfig struct {
@@ -37,6 +39,8 @@ func NewAuthRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.C
 
 	provider := oauth_provider.NewGoogleOAuth(config.GoogleID, config.GoogleSecret, fmt.Sprintf("http://%s", config.ListenAddress))
 	tokenService := jwt.NewTokenService(config.JWTSecret)
+	passwordEncrypter := crypto.NewUserPasswordEncrypter(bcrypt.DefaultCost)
+	sessionEncrypter := crypto.NewSessionEncrypter()
 
 	// --------------------------------------------------
 
@@ -45,6 +49,7 @@ func NewAuthRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.C
 		userRepo,
 		providerRepo,
 		profileRepo,
+		passwordEncrypter,
 	)
 	registerHTTPHandler := http_handler.NewRegisterUserHTTPHandler(registerHandler)
 
@@ -55,6 +60,8 @@ func NewAuthRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.C
 		providerRepo,
 		sessionRepo,
 		tokenService,
+		passwordEncrypter,
+		sessionEncrypter,
 		config.RefreshTokenDuration,
 		config.AccessTokenDuration,
 	)
@@ -75,6 +82,7 @@ func NewAuthRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.C
 		profileRepo,
 		sessionRepo,
 		tokenService,
+		sessionEncrypter,
 		config.RefreshTokenDuration,
 		config.AccessTokenDuration,
 	)
@@ -87,6 +95,7 @@ func NewAuthRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.C
 		sessionRepo,
 		blacklistRepo,
 		tokenService,
+		sessionEncrypter,
 		config.RefreshTokenDuration,
 		config.AccessTokenDuration,
 	)
@@ -94,7 +103,7 @@ func NewAuthRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.C
 
 	// --------------------------------------------------
 
-	logoutHandler := command.NewLogoutHandler(sessionRepo, blacklistRepo)
+	logoutHandler := command.NewLogoutHandler(sessionRepo, blacklistRepo, sessionEncrypter)
 	logoutHTTPHandler := http_handler.NewLogoutHTTPHandler(logoutHandler)
 
 	// --------------------------------------------------

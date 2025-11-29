@@ -4,9 +4,8 @@ import (
 	"context"
 	"time"
 
+	bd_domain "github.com/brunoibarbosa/url-shortener/internal/domain/bd"
 	user_domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
-	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
-	"github.com/brunoibarbosa/url-shortener/pkg/crypto"
 	"github.com/google/uuid"
 )
 
@@ -25,23 +24,31 @@ type RegisterUserResponse struct {
 }
 
 type RegisterUserHandler struct {
-	tx           *pg.TxManager
-	userRepo     user_domain.UserRepository
-	providerRepo user_domain.UserProviderRepository
-	profileRepo  user_domain.UserProfileRepository
+	tx                bd_domain.TransactionManager
+	userRepo          user_domain.UserRepository
+	providerRepo      user_domain.UserProviderRepository
+	profileRepo       user_domain.UserProfileRepository
+	passwordEncrypter user_domain.UserPasswordEncrypter
 }
 
-func NewRegisterUserHandler(tx *pg.TxManager, userRepo user_domain.UserRepository, providerRepo user_domain.UserProviderRepository, profileRepo user_domain.UserProfileRepository) *RegisterUserHandler {
+func NewRegisterUserHandler(
+	tx bd_domain.TransactionManager,
+	userRepo user_domain.UserRepository,
+	providerRepo user_domain.UserProviderRepository,
+	profileRepo user_domain.UserProfileRepository,
+	passwordEncrypter user_domain.UserPasswordEncrypter,
+) *RegisterUserHandler {
 	return &RegisterUserHandler{
 		tx,
 		userRepo,
 		providerRepo,
 		profileRepo,
+		passwordEncrypter,
 	}
 }
 
 func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserCommand) (*RegisterUserResponse, error) {
-	hash, err := crypto.HashPassword(cmd.Password)
+	hash, err := h.passwordEncrypter.HashPassword(cmd.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +75,7 @@ func (h *RegisterUserHandler) Handle(ctx context.Context, cmd RegisterUserComman
 		}
 
 		pv = &user_domain.UserProvider{
-			Provider:     "password",
+			Provider:     user_domain.ProviderPassword,
 			ProviderID:   cmd.Email,
 			PasswordHash: &hash,
 		}
