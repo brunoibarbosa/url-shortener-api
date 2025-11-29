@@ -56,8 +56,22 @@ func (h *LogoutHandler) Handle(ctx context.Context, cmd LogoutCommand) error {
 	}
 
 	remainder := time.Until(*s.ExpiresAt)
+
+	const maxRetries = 3
+	var blErr error
+
 	if err := h.blacklistRepo.Revoke(ctx, hashed, remainder); err != nil {
-		return session_domain.ErrRevokeFailed
+		for i := 0; i < maxRetries; i++ {
+			blErr = h.blacklistRepo.Revoke(ctx, hashed, remainder)
+			if blErr == nil {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+
+		if blErr != nil {
+			return session_domain.ErrRevokeFailed
+		}
 	}
 
 	return nil
