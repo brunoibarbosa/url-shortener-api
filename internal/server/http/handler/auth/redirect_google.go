@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/auth/command"
-	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
+	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler"
 )
 
 type RedirectGoogleHTTPHandler struct {
@@ -17,7 +17,7 @@ func NewRedirectGoogleHTTPHandler(cmd *command.RedirectGoogleHandler) *RedirectG
 	}
 }
 
-func (h *RedirectGoogleHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
+func (h *RedirectGoogleHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
 	ctx := r.Context()
 	url := h.cmd.Handle(ctx)
 

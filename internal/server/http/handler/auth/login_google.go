@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/auth/command"
-	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
+	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 )
 
@@ -26,12 +26,12 @@ func NewLoginGoogleHTTPHandler(cmd *command.LoginGoogleHandler, refreshTokenDura
 	}
 }
 
-func (h *LoginGoogleHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
+func (h *LoginGoogleHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
 	ctx := r.Context()
 
 	code := r.URL.Query().Get("code")
 	if code == "" {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.login.failed", handler.Detail(ctx, "code", "error.details.field_required"))
+		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.login.failed", http_handler.Detail(ctx, "code", "error.details.field_required"))
 	}
 
 	appCmd := command.LoginGoogleCommand{
@@ -42,7 +42,7 @@ func (h *LoginGoogleHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) 
 
 	accessToken, refreshToken, err := h.cmd.Handle(ctx, appCmd)
 	if err != nil {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.login.failed", nil)
+		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.login.failed", nil)
 	}
 
 	http.SetCookie(w, &http.Cookie{
@@ -62,7 +62,7 @@ func (h *LoginGoogleHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if encodeErr := json.NewEncoder(w).Encode(response); encodeErr != nil {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
+		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
 	}
 
 	return nil, nil

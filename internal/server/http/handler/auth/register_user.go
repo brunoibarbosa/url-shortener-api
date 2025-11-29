@@ -10,7 +10,7 @@ import (
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/auth/command"
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
-	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
+	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler"
 	"github.com/brunoibarbosa/url-shortener/internal/validation"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 	"github.com/google/uuid"
@@ -43,7 +43,7 @@ func NewRegisterUserHTTPHandler(cmd *command.RegisterUserHandler) *RegisterUserH
 	}
 }
 
-func (h *RegisterUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
+func (h *RegisterUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
 	ctx := r.Context()
 
 	payload, validationErr := validateRegisterPayload(r, ctx)
@@ -56,9 +56,9 @@ func (h *RegisterUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	if handleErr != nil {
 		switch {
 		case err.Is(handleErr, domain.ErrEmailAlreadyExists):
-			return nil, handler.NewI18nHTTPError(ctx, http.StatusConflict, errors.CodeValidationError, "error.validation.failed", handler.Detail(ctx, "email", "error.details.email.already_exists"))
+			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusConflict, errors.CodeValidationError, "error.validation.failed", http_handler.Detail(ctx, "email", "error.details.email.already_exists"))
 		default:
-			return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.user.create_failed", nil)
+			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.user.create_failed", nil)
 		}
 	}
 
@@ -74,21 +74,21 @@ func (h *RegisterUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	if encodeErr := json.NewEncoder(w).Encode(response); encodeErr != nil {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
+		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
 	}
 
 	return nil, nil
 }
 
-func validateRegisterPayload(r *http.Request, ctx context.Context) (RegisterUserPayload, *handler.HTTPError) {
+func validateRegisterPayload(r *http.Request, ctx context.Context) (RegisterUserPayload, *http_handler.HTTPError) {
 	var payload RegisterUserPayload
 	decodeErr := json.NewDecoder(r.Body).Decode(&payload)
 
 	if err.Is(decodeErr, io.EOF) {
-		return RegisterUserPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.empty_body", nil)
+		return RegisterUserPayload{}, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.empty_body", nil)
 	}
 
-	ec := handler.NewErrorCollector(ctx)
+	ec := http_handler.NewErrorCollector(ctx)
 
 	if payload.Email == "" {
 		ec.AddFieldError("email", "error.details.email.invalid_format")

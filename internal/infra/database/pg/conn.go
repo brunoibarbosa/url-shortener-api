@@ -22,11 +22,13 @@ type Postgres struct {
 }
 
 func NewPostgres(postgres PostgresConnection) *Postgres {
+	log.Printf("Connecting to Postgres at %s:%d/%s (user: %s)...", postgres.Host, postgres.Port, postgres.Name, postgres.User)
+
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s", postgres.User, postgres.Password, postgres.Host, postgres.Port, postgres.Name)
 
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		log.Fatal("Unable to parse Postgres connection string: v%", err)
+		log.Fatalf("Unable to parse Postgres connection string: %v", err)
 	}
 
 	config.MaxConns = 10
@@ -39,10 +41,10 @@ func NewPostgres(postgres PostgresConnection) *Postgres {
 	}
 
 	if err := pool.Ping(context.Background()); err != nil {
-		log.Fatalf("Unable to create Postgres pool: %v", err)
+		log.Fatalf("Unable to ping Postgres: %v", err)
 	}
 
-	log.Println("Postgres connection established successfully")
+	log.Printf("Successfully connected to Postgres at %s:%d/%s", postgres.Host, postgres.Port, postgres.Name)
 	return &Postgres{
 		Pool: pool,
 	}

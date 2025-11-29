@@ -10,7 +10,7 @@ import (
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/auth/command"
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
-	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
+	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler"
 	"github.com/brunoibarbosa/url-shortener/internal/validation"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 )
@@ -36,7 +36,7 @@ func NewLoginUserHTTPHandler(cmd *command.LoginUserHandler, refreshTokenDuration
 	}
 }
 
-func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
+func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
 	ctx := r.Context()
 
 	payload, validationErr := validateLoginUserPayload(r, ctx)
@@ -54,11 +54,11 @@ func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (h
 	if handleErr != nil {
 		switch {
 		case err.Is(handleErr, domain.ErrInvalidCredentials):
-			return nil, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.login.invalid_credentials", nil)
+			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.login.invalid_credentials", nil)
 		case err.Is(handleErr, domain.ErrSocialLoginOnly):
-			return nil, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.login.invalid_credentials", nil)
+			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.login.invalid_credentials", nil)
 		default:
-			return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.login.failed", nil)
+			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.login.failed", nil)
 		}
 	}
 
@@ -79,21 +79,21 @@ func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (h
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if encodeErr := json.NewEncoder(w).Encode(response); encodeErr != nil {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
+		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
 	}
 
 	return nil, nil
 }
 
-func validateLoginUserPayload(r *http.Request, ctx context.Context) (LoginUserPayload, *handler.HTTPError) {
+func validateLoginUserPayload(r *http.Request, ctx context.Context) (LoginUserPayload, *http_handler.HTTPError) {
 	var payload LoginUserPayload
 	decodeErr := json.NewDecoder(r.Body).Decode(&payload)
 
 	if err.Is(decodeErr, io.EOF) {
-		return LoginUserPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.empty_body", nil)
+		return LoginUserPayload{}, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.empty_body", nil)
 	}
 
-	ec := handler.NewErrorCollector(ctx)
+	ec := http_handler.NewErrorCollector(ctx)
 
 	if payload.Email == "" {
 		ec.AddFieldError("email", "error.details.field_required")

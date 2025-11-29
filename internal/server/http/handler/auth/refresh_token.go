@@ -9,7 +9,7 @@ import (
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/auth/command"
 	sd "github.com/brunoibarbosa/url-shortener/internal/domain/session"
-	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
+	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 )
 
@@ -33,7 +33,7 @@ func NewRefreshTokenHTTPHandler(cmd *command.RefreshTokenHandler, refreshTokenDu
 	}
 }
 
-func (h *RefreshTokenHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
+func (h *RefreshTokenHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
 	ctx := r.Context()
 
 	payload, validationErr := validateRefreshTokenPayload(r, ctx)
@@ -50,11 +50,11 @@ func (h *RefreshTokenHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	if handleErr != nil {
 		switch {
 		case err.Is(handleErr, sd.ErrInvalidRefreshToken):
-			return nil, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.session.invalid_refresh_token", nil)
+			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.session.invalid_refresh_token", nil)
 		case err.Is(handleErr, sd.ErrTokenGenerate):
-			return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.session.generate_refresh_token", nil)
+			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.session.generate_refresh_token", nil)
 		default:
-			return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)
+			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)
 		}
 	}
 
@@ -75,13 +75,13 @@ func (h *RefreshTokenHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if encodeErr := json.NewEncoder(w).Encode(response); encodeErr != nil {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
+		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
 	}
 
 	return nil, nil
 }
 
-func validateRefreshTokenPayload(r *http.Request, ctx context.Context) (RefreshTokenPayload, *handler.HTTPError) {
+func validateRefreshTokenPayload(r *http.Request, ctx context.Context) (RefreshTokenPayload, *http_handler.HTTPError) {
 	var payload = RefreshTokenPayload{
 		RefreshToken: "",
 	}
@@ -91,7 +91,7 @@ func validateRefreshTokenPayload(r *http.Request, ctx context.Context) (RefreshT
 	}
 
 	if payload.RefreshToken == "" {
-		return RefreshTokenPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.session.missing_refresh_token", nil)
+		return RefreshTokenPayload{}, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.session.missing_refresh_token", nil)
 	}
 
 	return payload, nil

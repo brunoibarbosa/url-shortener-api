@@ -1,4 +1,4 @@
-package handler
+package http_handler
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/session/query"
 	"github.com/brunoibarbosa/url-shortener/internal/domain"
-	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
+	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 )
 
@@ -45,7 +45,7 @@ func NewListSessionsHTTPHandler(qry query.ListSessionsHandler) *ListSessionsHTTP
 	}
 }
 
-func (h *ListSessionsHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
+func (h *ListSessionsHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
 	ctx := r.Context()
 
 	payload, validationErr := validateListSessionsParams(r, ctx)
@@ -63,7 +63,7 @@ func (h *ListSessionsHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	}
 	list, count, handleErr := h.qry.Handle(r.Context(), params)
 	if handleErr != nil {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)
+		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)
 	}
 
 	sessions := make([]Session, len(list))
@@ -86,15 +86,15 @@ func (h *ListSessionsHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if encodeErr := json.NewEncoder(w).Encode(response); encodeErr != nil {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
+		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
 	}
 
 	return nil, nil
 }
-func validateListSessionsParams(r *http.Request, ctx context.Context) (ListSessionsParams, *handler.HTTPError) {
+func validateListSessionsParams(r *http.Request, ctx context.Context) (ListSessionsParams, *http_handler.HTTPError) {
 	var params ListSessionsParams
 
-	ec := handler.NewErrorCollector(ctx)
+	ec := http_handler.NewErrorCollector(ctx)
 
 	// --------------------------------------------------
 

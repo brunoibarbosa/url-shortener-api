@@ -1,4 +1,4 @@
-package handler
+package http_handler
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
-	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
+	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler"
 	"github.com/brunoibarbosa/url-shortener/internal/validation"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 )
@@ -32,7 +32,7 @@ func NewCreateShortURLHTTPHandler(cmd *command.CreateShortURLHandler) *CreateSho
 	}
 }
 
-func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
+func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
 	ctx := r.Context()
 
 	payload, err := validateShortenPayload(r, ctx)
@@ -43,7 +43,7 @@ func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Reques
 	appCmd := command.CreateShortURLCommand{OriginalURL: payload.URL, Length: 6, MaxRetries: 10}
 	url, handleErr := h.cmd.Handle(r.Context(), appCmd)
 	if handleErr != nil {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.url.create_failed", nil)
+		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.url.create_failed", nil)
 	}
 
 	response := CreateShortURL201Response{
@@ -53,21 +53,21 @@ func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	if encodeErr := json.NewEncoder(w).Encode(response); encodeErr != nil {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
+		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
 	}
 
 	return nil, nil
 }
 
-func validateShortenPayload(r *http.Request, ctx context.Context) (CreateShortURLPayload, *handler.HTTPError) {
+func validateShortenPayload(r *http.Request, ctx context.Context) (CreateShortURLPayload, *http_handler.HTTPError) {
 	var payload CreateShortURLPayload
 	decodeErr := json.NewDecoder(r.Body).Decode(&payload)
 
 	if err.Is(decodeErr, io.EOF) {
-		return CreateShortURLPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.empty_body", nil)
+		return CreateShortURLPayload{}, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.common.empty_body", nil)
 	}
 
-	ec := handler.NewErrorCollector(ctx)
+	ec := http_handler.NewErrorCollector(ctx)
 
 	if payload.URL == "" {
 		ec.AddFieldError("url", "error.details.field_required")

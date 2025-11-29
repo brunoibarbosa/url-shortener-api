@@ -7,7 +7,7 @@ import (
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/auth/command"
 	sd "github.com/brunoibarbosa/url-shortener/internal/domain/session"
-	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
+	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 )
 
@@ -25,7 +25,7 @@ func NewLogoutHTTPHandler(cmd *command.LogoutHandler) *LogoutHTTPHandler {
 	}
 }
 
-func (h *LogoutHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
+func (h *LogoutHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
 	ctx := r.Context()
 
 	payload, validationErr := validateLogoutPayload(r, ctx)
@@ -40,11 +40,11 @@ func (h *LogoutHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (hand
 	if handleErr != nil {
 		switch {
 		case err.Is(handleErr, sd.ErrInvalidRefreshToken):
-			return nil, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.session.invalid_refresh_token", nil)
+			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.session.invalid_refresh_token", nil)
 		case err.Is(handleErr, sd.ErrTokenGenerate):
-			return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.session.generate_refresh_token", nil)
+			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.session.generate_refresh_token", nil)
 		default:
-			return nil, handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)
+			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)
 		}
 	}
 
@@ -62,7 +62,7 @@ func (h *LogoutHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (hand
 	return nil, nil
 }
 
-func validateLogoutPayload(r *http.Request, ctx context.Context) (LogoutPayload, *handler.HTTPError) {
+func validateLogoutPayload(r *http.Request, ctx context.Context) (LogoutPayload, *http_handler.HTTPError) {
 	var payload = LogoutPayload{
 		RefreshToken: "",
 	}
@@ -72,7 +72,7 @@ func validateLogoutPayload(r *http.Request, ctx context.Context) (LogoutPayload,
 	}
 
 	if payload.RefreshToken == "" {
-		return LogoutPayload{}, handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.session.missing_refresh_token", nil)
+		return LogoutPayload{}, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.session.missing_refresh_token", nil)
 	}
 
 	return payload, nil

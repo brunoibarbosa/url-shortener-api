@@ -1,4 +1,4 @@
-package handler
+package http_handler
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
-	"github.com/brunoibarbosa/url-shortener/internal/presentation/http/handler"
+	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler"
 	app_errors "github.com/brunoibarbosa/url-shortener/pkg/errors"
 	"github.com/go-chi/chi/v5"
 )
@@ -19,7 +19,7 @@ func NewRedirectHTTPHandler(cmd *command.GetOriginalURLHandler) *RedirectHTTPHan
 	return &RedirectHTTPHandler{cmd: cmd}
 }
 
-func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (handler.HandlerResponse, *handler.HTTPError) {
+func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
 	shortCode := chi.URLParam(r, "shortCode")
 
 	appQuery := command.GetOriginalURLQuery{ShortCode: shortCode}
@@ -27,11 +27,11 @@ func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (ha
 	ctx := r.Context()
 
 	if err != nil && errors.Is(err, domain.ErrExpiredURL) {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusGone, app_errors.CodeNotFound, "error.url.expired_url", handler.Detail(ctx, "shortCode", "error.details.shortcode.expired"))
+		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusGone, app_errors.CodeNotFound, "error.url.expired_url", http_handler.Detail(ctx, "shortCode", "error.details.shortcode.expired"))
 	}
 
 	if (err != nil && errors.Is(err, domain.ErrURLNotFound)) || originalURL == "" {
-		return nil, handler.NewI18nHTTPError(ctx, http.StatusNotFound, app_errors.CodeNotFound, "error.common.not_found", handler.Detail(ctx, "shortCode", "error.details.shortcode.not_found"))
+		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusNotFound, app_errors.CodeNotFound, "error.common.not_found", http_handler.Detail(ctx, "shortCode", "error.details.shortcode.not_found"))
 	}
 
 	http.Redirect(w, r, originalURL, http.StatusFound)
