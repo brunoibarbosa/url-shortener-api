@@ -1,0 +1,47 @@
+post:
+  tags:
+    - Autenticação
+  summary: Login com e-mail e senha
+  description: Autentica um usuário e retorna tokens de acesso e atualização
+  operationId: loginUser
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../../components/schemas/auth/LoginUserRequest.yaml"
+        examples:
+          exemplo:
+            value:
+              email: usuario@exemplo.com
+              password: SenhaSegura123!
+  responses:
+    "200":
+      description: Login realizado com sucesso
+      headers:
+        Set-Cookie:
+          schema:
+            type: string
+            example: refresh_token=eyJhbGc...; Path=/; HttpOnly; Secure; SameSite=Strict
+          description: Cookie com refresh token
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/auth/LoginResponse.yaml"
+          examples:
+            exemplo:
+              value:
+                accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    "400":
+      description: Credenciais inválidas
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/errors/ErrorResponse.yaml"
+          examples:
+            invalid_credentials:
+              value:
+                code: VALIDATION_ERROR
+                message: Credenciais inválidas
+    "500":
+      $ref: "../../components/responses/InternalServerError.yaml"

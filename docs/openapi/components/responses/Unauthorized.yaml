@@ -1,0 +1,10 @@
+description: Não autenticado ou token inválido
+content:
+  application/json:
+    schema:
+      $ref: "../schemas/errors/ErrorResponse.yaml"
+    examples:
+      exemplo:
+        value:
+          code: UNAUTHORIZED
+          message: Autenticação necessária

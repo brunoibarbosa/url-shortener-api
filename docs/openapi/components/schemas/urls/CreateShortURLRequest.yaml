@@ -1,0 +1,9 @@
+type: object
+required:
+  - url
+properties:
+  url:
+    type: string
+    format: uri
+    description: URL completa a ser encurtada (deve incluir esquema http:// ou https://)
+    example: https://www.exemplo.com.br/pagina/muito/longa/com/parametros?id=123

@@ -1,0 +1,51 @@
+post:
+  tags:
+    - Autenticação
+  summary: Registrar novo usuário
+  description: Cria uma nova conta de usuário com e-mail e senha
+  operationId: registerUser
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../../components/schemas/auth/RegisterUserRequest.yaml"
+        examples:
+          exemplo:
+            value:
+              email: usuario@exemplo.com
+              password: SenhaSegura123!
+              name: João Silva
+  responses:
+    "201":
+      description: Usuário criado com sucesso
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/auth/RegisterUserResponse.yaml"
+          examples:
+            exemplo:
+              value:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                email: usuario@exemplo.com
+                createdAt: "2025-12-02T10:30:00Z"
+                profile:
+                  name: João Silva
+    "400":
+      $ref: "../../components/responses/BadRequest.yaml"
+    "409":
+      description: E-mail já cadastrado
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/errors/ErrorResponse.yaml"
+          examples:
+            email_exists:
+              value:
+                code: VALIDATION_ERROR
+                message: Erro de validação
+                details:
+                  - field: email
+                    message: E-mail já cadastrado
+    "500":
+      $ref: "../../components/responses/InternalServerError.yaml"

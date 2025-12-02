@@ -1,0 +1,22 @@
+type: object
+properties:
+  data:
+    type: array
+    items:
+      $ref: "./Session.yaml"
+    description: Lista de sessões
+  count:
+    type: integer
+    format: int64
+    description: Quantidade total de sessões
+    example: 25
+  page:
+    type: integer
+    format: int64
+    description: Página atual
+    example: 1
+  limit:
+    type: integer
+    format: int64
+    description: Quantidade de itens por página
+    example: 10

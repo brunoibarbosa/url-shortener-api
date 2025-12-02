@@ -1,0 +1,16 @@
+get:
+  tags:
+    - Autenticação
+  summary: Redirecionar para login do Google
+  description: Inicia o fluxo de autenticação OAuth2 com o Google
+  operationId: redirectGoogle
+  responses:
+    "307":
+      description: Redirecionamento para página de login do Google
+      headers:
+        Location:
+          schema:
+            type: string
+            example: https://accounts.google.com/o/oauth2/v2/auth?...
+    "500":
+      $ref: "../../components/responses/InternalServerError.yaml"

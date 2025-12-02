@@ -1,0 +1,38 @@
+post:
+  tags:
+    - Autenticação
+  summary: Renovar token de acesso
+  description: Gera um novo access token usando o refresh token do cookie
+  operationId: refreshToken
+  parameters:
+    - name: refresh_token
+      in: cookie
+      required: true
+      description: Token de atualização
+      schema:
+        type: string
+  responses:
+    "200":
+      description: Token renovado com sucesso
+      headers:
+        Set-Cookie:
+          schema:
+            type: string
+            example: refresh_token=eyJhbGc...; Path=/; HttpOnly; Secure; SameSite=Strict
+          description: Novo refresh token
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/auth/RefreshTokenResponse.yaml"
+          examples:
+            exemplo:
+              value:
+                accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    "400":
+      description: Refresh token ausente ou inválido
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/errors/ErrorResponse.yaml"
+    "500":
+      $ref: "../../components/responses/InternalServerError.yaml"

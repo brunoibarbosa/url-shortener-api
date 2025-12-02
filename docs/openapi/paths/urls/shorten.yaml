@@ -1,0 +1,50 @@
+post:
+  tags:
+    - URLs
+  summary: Criar URL encurtada
+  description: Cria um código curto para uma URL longa
+  operationId: createShortURL
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "../../components/schemas/urls/CreateShortURLRequest.yaml"
+        examples:
+          exemplo:
+            value:
+              url: https://www.exemplo.com.br/pagina/muito/longa/com/parametros?id=123
+  responses:
+    "201":
+      description: URL encurtada criada com sucesso
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/urls/CreateShortURLResponse.yaml"
+          examples:
+            exemplo:
+              value:
+                shortCode: aB3xY9
+    "400":
+      description: URL inválida ou ausente
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/errors/ErrorResponse.yaml"
+          examples:
+            missing_url:
+              value:
+                code: VALIDATION_ERROR
+                message: Erro de validação
+                details:
+                  - field: url
+                    message: Campo obrigatório
+            invalid_format:
+              value:
+                code: VALIDATION_ERROR
+                message: Erro de validação
+                details:
+                  - field: url
+                    message: Formato de URL inválido
+    "500":
+      $ref: "../../components/responses/InternalServerError.yaml"

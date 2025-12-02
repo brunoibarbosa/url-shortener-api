@@ -1,0 +1,40 @@
+get:
+  tags:
+    - Autenticação
+  summary: Callback do login do Google
+  description: Processa o retorno da autenticação OAuth2 do Google
+  operationId: loginGoogle
+  parameters:
+    - name: code
+      in: query
+      required: true
+      description: Código de autorização retornado pelo Google
+      schema:
+        type: string
+    - name: state
+      in: query
+      required: true
+      description: Token de estado para validação CSRF
+      schema:
+        type: string
+  responses:
+    "200":
+      description: Login realizado com sucesso
+      headers:
+        Set-Cookie:
+          schema:
+            type: string
+            example: refresh_token=eyJhbGc...; Path=/; HttpOnly; Secure; SameSite=Strict
+          description: Cookie com refresh token
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/auth/LoginResponse.yaml"
+    "400":
+      description: State inválido ou parâmetros ausentes
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/errors/ErrorResponse.yaml"
+    "500":
+      $ref: "../../components/responses/InternalServerError.yaml"

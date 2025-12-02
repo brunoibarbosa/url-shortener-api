@@ -1,0 +1,24 @@
+type: object
+properties:
+  id:
+    type: string
+    format: uuid
+    description: ID único do usuário
+    example: 550e8400-e29b-41d4-a716-446655440000
+  email:
+    type: string
+    format: email
+    description: E-mail do usuário
+    example: usuario@exemplo.com
+  createdAt:
+    type: string
+    format: date-time
+    description: Data e hora de criação da conta
+    example: "2025-12-02T10:30:00Z"
+  profile:
+    type: object
+    properties:
+      name:
+        type: string
+        description: Nome do usuário
+        example: João Silva

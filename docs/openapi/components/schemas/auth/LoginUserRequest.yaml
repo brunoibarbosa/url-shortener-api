@@ -1,0 +1,15 @@
+type: object
+required:
+  - email
+  - password
+properties:
+  email:
+    type: string
+    format: email
+    description: E-mail do usuário
+    example: usuario@exemplo.com
+  password:
+    type: string
+    format: password
+    description: Senha do usuário
+    example: SenhaSegura123!

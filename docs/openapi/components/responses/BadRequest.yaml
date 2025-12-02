@@ -1,0 +1,10 @@
+description: Requisição inválida
+content:
+  application/json:
+    schema:
+      $ref: "../schemas/errors/ErrorResponse.yaml"
+    examples:
+      exemplo:
+        value:
+          code: BAD_REQUEST
+          message: Requisição inválida

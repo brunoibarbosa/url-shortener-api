@@ -1,0 +1,110 @@
+openapi: 3.0.3
+info:
+  title: API Encurtador de URLs
+  description: |
+    API RESTful para encurtar URLs com suporte a autenticação, gerenciamento de sessões e cache inteligente.
+
+    ## Características
+    - Criação e redirecionamento de URLs encurtadas
+    - Autenticação de usuários (e-mail/senha e Google OAuth)
+    - Gerenciamento de sessões
+    - Suporte a i18n (Português e Inglês)
+    - Cache com Redis usando política LFU
+    - Expiração automática de URLs
+
+    ## Autenticação
+    A API utiliza **Bearer Token** (JWT) para autenticar requisições protegidas. 
+    O token de acesso deve ser incluído no header `Authorization: Bearer <token>`.
+
+    Para renovar o token, use o endpoint `/auth/refresh` com o cookie `refresh_token`.
+  version: 1.0.0
+  contact:
+    name: Bruno Barbosa
+    url: https://github.com/brunoibarbosa
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Desenvolvimento
+
+tags:
+  - name: Autenticação
+    description: Endpoints para registro, login e gerenciamento de autenticação
+  - name: URLs
+    description: Endpoints para criação e redirecionamento de URLs encurtadas
+  - name: Sessões
+    description: Endpoints para gerenciamento de sessões do usuário
+
+paths:
+  # Autenticação
+  /auth/register:
+    $ref: "./paths/auth/register.yaml"
+  /auth/login:
+    $ref: "./paths/auth/login.yaml"
+  /auth/google:
+    $ref: "./paths/auth/google.yaml"
+  /auth/google/callback:
+    $ref: "./paths/auth/google-callback.yaml"
+  /auth/refresh:
+    $ref: "./paths/auth/refresh.yaml"
+  /auth/logout:
+    $ref: "./paths/auth/logout.yaml"
+
+  # URLs
+  /url/shorten:
+    $ref: "./paths/urls/shorten.yaml"
+  /r/{shortCode}:
+    $ref: "./paths/urls/redirect.yaml"
+
+  # Sessões
+  /user/sessions:
+    $ref: "./paths/sessions/list.yaml"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtido através dos endpoints de login
+
+  schemas:
+    # Autenticação
+    RegisterUserRequest:
+      $ref: "./components/schemas/auth/RegisterUserRequest.yaml"
+    RegisterUserResponse:
+      $ref: "./components/schemas/auth/RegisterUserResponse.yaml"
+    LoginUserRequest:
+      $ref: "./components/schemas/auth/LoginUserRequest.yaml"
+    LoginResponse:
+      $ref: "./components/schemas/auth/LoginResponse.yaml"
+    RefreshTokenResponse:
+      $ref: "./components/schemas/auth/RefreshTokenResponse.yaml"
+
+    # URLs
+    CreateShortURLRequest:
+      $ref: "./components/schemas/urls/CreateShortURLRequest.yaml"
+    CreateShortURLResponse:
+      $ref: "./components/schemas/urls/CreateShortURLResponse.yaml"
+
+    # Sessões
+    Session:
+      $ref: "./components/schemas/sessions/Session.yaml"
+    ListSessionsResponse:
+      $ref: "./components/schemas/sessions/ListSessionsResponse.yaml"
+
+    # Erros
+    ErrorDetail:
+      $ref: "./components/schemas/errors/ErrorDetail.yaml"
+    ErrorResponse:
+      $ref: "./components/schemas/errors/ErrorResponse.yaml"
+
+  responses:
+    BadRequest:
+      $ref: "./components/responses/BadRequest.yaml"
+    Unauthorized:
+      $ref: "./components/responses/Unauthorized.yaml"
+    InternalServerError:
+      $ref: "./components/responses/InternalServerError.yaml"

@@ -1,0 +1,10 @@
+description: Erro interno do servidor
+content:
+  application/json:
+    schema:
+      $ref: "../schemas/errors/ErrorResponse.yaml"
+    examples:
+      exemplo:
+        value:
+          code: INTERNAL_ERROR
+          message: Erro interno do servidor

@@ -1,0 +1,60 @@
+get:
+  tags:
+    - URLs
+  summary: Redirecionar para URL original
+  description: Redireciona para a URL original associada ao código curto
+  operationId: redirectToOriginalURL
+  parameters:
+    - name: shortCode
+      in: path
+      required: true
+      description: Código curto da URL
+      schema:
+        type: string
+        minLength: 6
+        maxLength: 6
+        example: aB3xY9
+  responses:
+    "302":
+      description: Redirecionamento para URL original
+      headers:
+        Location:
+          schema:
+            type: string
+            example: https://www.exemplo.com.br/pagina/muito/longa
+    "400":
+      description: Código curto inválido
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/errors/ErrorResponse.yaml"
+    "404":
+      description: Código curto não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/errors/ErrorResponse.yaml"
+          examples:
+            not_found:
+              value:
+                code: NOT_FOUND
+                message: Recurso não encontrado
+                details:
+                  - field: shortCode
+                    message: Código curto não encontrado
+    "410":
+      description: URL expirada
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/errors/ErrorResponse.yaml"
+          examples:
+            expired:
+              value:
+                code: NOT_FOUND
+                message: URL expirada
+                details:
+                  - field: shortCode
+                    message: Este código curto expirou
+    "500":
+      $ref: "../../components/responses/InternalServerError.yaml"

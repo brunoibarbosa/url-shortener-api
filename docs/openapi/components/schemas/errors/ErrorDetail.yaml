@@ -1,0 +1,10 @@
+type: object
+properties:
+  field:
+    type: string
+    description: Campo relacionado ao erro
+    example: email
+  message:
+    type: string
+    description: Mensagem de erro específica do campo
+    example: E-mail já cadastrado

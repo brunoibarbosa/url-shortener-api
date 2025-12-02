@@ -1,0 +1,21 @@
+type: object
+properties:
+  code:
+    type: string
+    description: Código do erro
+    enum:
+      - VALIDATION_ERROR
+      - BAD_REQUEST
+      - UNAUTHORIZED
+      - NOT_FOUND
+      - INTERNAL_ERROR
+    example: VALIDATION_ERROR
+  message:
+    type: string
+    description: Mensagem de erro principal
+    example: Erro de validação
+  details:
+    type: array
+    items:
+      $ref: "./ErrorDetail.yaml"
+    description: Detalhes adicionais do erro

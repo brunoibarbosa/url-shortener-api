@@ -1,0 +1,30 @@
+post:
+  tags:
+    - Autenticação
+  summary: Fazer logout
+  description: Invalida a sessão atual e remove o refresh token
+  operationId: logout
+  parameters:
+    - name: refresh_token
+      in: cookie
+      required: true
+      description: Token de atualização
+      schema:
+        type: string
+  responses:
+    "200":
+      description: Logout realizado com sucesso
+      headers:
+        Set-Cookie:
+          schema:
+            type: string
+            example: refresh_token=; Path=/; HttpOnly; Secure; SameSite=Strict; MaxAge=-1
+          description: Cookie de refresh token removido
+    "400":
+      description: Refresh token ausente ou inválido
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/errors/ErrorResponse.yaml"
+    "500":
+      $ref: "../../components/responses/InternalServerError.yaml"

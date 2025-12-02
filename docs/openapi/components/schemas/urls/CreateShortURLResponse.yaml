@@ -1,0 +1,8 @@
+type: object
+properties:
+  shortCode:
+    type: string
+    minLength: 6
+    maxLength: 6
+    description: Código curto gerado para a URL
+    example: aB3xY9
