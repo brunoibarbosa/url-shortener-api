@@ -32,18 +32,18 @@ func NewCreateShortURLHTTPHandler(cmd *command.CreateShortURLHandler) *CreateSho
 	}
 }
 
-func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
+func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) *http_handler.HTTPError {
 	ctx := r.Context()
 
 	payload, err := validateShortenPayload(r, ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	appCmd := command.CreateShortURLCommand{OriginalURL: payload.URL, Length: 6, MaxRetries: 10}
 	url, handleErr := h.cmd.Handle(r.Context(), appCmd)
 	if handleErr != nil {
-		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.url.create_failed", nil)
+		return http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.url.create_failed", nil)
 	}
 
 	response := CreateShortURL201Response{
@@ -53,10 +53,10 @@ func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	if encodeErr := json.NewEncoder(w).Encode(response); encodeErr != nil {
-		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
+		return http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
 	}
 
-	return nil, nil
+	return nil
 }
 
 func validateShortenPayload(r *http.Request, ctx context.Context) (CreateShortURLPayload, *http_handler.HTTPError) {

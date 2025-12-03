@@ -33,12 +33,12 @@ func NewRefreshTokenHTTPHandler(cmd *command.RefreshTokenHandler, refreshTokenDu
 	}
 }
 
-func (h *RefreshTokenHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
+func (h *RefreshTokenHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) *http_handler.HTTPError {
 	ctx := r.Context()
 
 	payload, validationErr := validateRefreshTokenPayload(r, ctx)
 	if validationErr != nil {
-		return nil, validationErr
+		return validationErr
 	}
 
 	appCmd := command.RefreshTokenCommand{
@@ -50,11 +50,11 @@ func (h *RefreshTokenHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	if handleErr != nil {
 		switch {
 		case err.Is(handleErr, sd.ErrInvalidRefreshToken):
-			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.session.invalid_refresh_token", nil)
+			return http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.session.invalid_refresh_token", nil)
 		case err.Is(handleErr, sd.ErrTokenGenerate):
-			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.session.generate_refresh_token", nil)
+			return http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.session.generate_refresh_token", nil)
 		default:
-			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)
+			return http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)
 		}
 	}
 
@@ -75,10 +75,10 @@ func (h *RefreshTokenHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if encodeErr := json.NewEncoder(w).Encode(responseBody); encodeErr != nil {
-		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
+		return http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
 	}
 
-	return nil, nil
+	return nil
 }
 
 func validateRefreshTokenPayload(r *http.Request, ctx context.Context) (RefreshTokenPayload, *http_handler.HTTPError) {

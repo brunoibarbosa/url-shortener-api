@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/brunoibarbosa/url-shortener/internal/i18n"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
@@ -60,6 +62,12 @@ func main() {
 	http_routes.NewSessionRoutes(router, postgres.Pool, http_routes.SessionRoutesConfig{
 		JWTSecret: cfg.Env.JWTSecret,
 	})
+
+	// Swagger - usa caminho absoluto para evitar problemas com diretório de trabalho
+	swaggerSpecPath := filepath.Join(getProjectRoot(), "docs", "openapi", "openapi.yaml")
+	http_routes.NewSwaggerRoutes(router, http_routes.SwaggerRoutesConfig{
+		SpecPath: swaggerSpecPath,
+	})
 	log.Println("Routes configured successfully")
 
 	// Server
@@ -70,4 +78,22 @@ func main() {
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
+}
+
+// getProjectRoot retorna o caminho absoluto para a raiz do projeto
+func getProjectRoot() string {
+	// Obtém o diretório atual do arquivo main.go
+	// Este arquivo está em cmd/url-shortener, então precisamos subir 2 níveis
+	executable, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("Failed to get working directory: %v", err)
+	}
+
+	// Se estiver executando de cmd/url-shortener, volta 2 níveis
+	if filepath.Base(executable) == "url-shortener" && filepath.Base(filepath.Dir(executable)) == "cmd" {
+		return filepath.Join(executable, "..", "..")
+	}
+
+	// Caso contrário, assume que já está na raiz
+	return executable
 }

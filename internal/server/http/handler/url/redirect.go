@@ -19,12 +19,12 @@ func NewRedirectHTTPHandler(cmd *command.GetOriginalURLHandler) *RedirectHTTPHan
 	return &RedirectHTTPHandler{cmd: cmd}
 }
 
-func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
+func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) *http_handler.HTTPError {
 	shortCode := chi.URLParam(r, "shortCode")
 	ctx := r.Context()
 
 	if shortCode == "" {
-		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, app_errors.CodeBadRequest, "error.url.expired_url", http_handler.Detail(ctx, "shortCode", "error.details.shortcode.expired"))
+		return http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, app_errors.CodeBadRequest, "error.url.expired_url", http_handler.Detail(ctx, "shortCode", "error.details.shortcode.expired"))
 	}
 
 	appQuery := command.GetOriginalURLQuery{ShortCode: shortCode}
@@ -32,18 +32,18 @@ func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (ht
 
 	if err != nil {
 		if errors.Is(err, domain.ErrExpiredURL) {
-			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusGone, app_errors.CodeNotFound, "error.url.expired_url", http_handler.Detail(ctx, "shortCode", "error.details.shortcode.expired"))
+			return http_handler.NewI18nHTTPError(ctx, http.StatusGone, app_errors.CodeNotFound, "error.url.expired_url", http_handler.Detail(ctx, "shortCode", "error.details.shortcode.expired"))
 		}
 
 		if errors.Is(err, domain.ErrInvalidShortCode) {
-			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, app_errors.CodeBadRequest, "error.url.required_short_code", nil)
+			return http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, app_errors.CodeBadRequest, "error.url.required_short_code", nil)
 		}
 
 		if (errors.Is(err, domain.ErrURLNotFound)) || originalURL == "" {
-			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusNotFound, app_errors.CodeNotFound, "error.common.not_found", http_handler.Detail(ctx, "shortCode", "error.details.shortcode.not_found"))
+			return http_handler.NewI18nHTTPError(ctx, http.StatusNotFound, app_errors.CodeNotFound, "error.common.not_found", http_handler.Detail(ctx, "shortCode", "error.details.shortcode.not_found"))
 		}
 	}
 
 	http.Redirect(w, r, originalURL, http.StatusFound)
-	return nil, nil
+	return nil
 }

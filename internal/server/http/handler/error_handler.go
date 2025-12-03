@@ -83,7 +83,7 @@ func WriteJSONErrorWithDetails(w http.ResponseWriter, status int, code, message,
 
 func RequestValidator(h HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, err := h(w, r)
+		err := h(w, r)
 		if err != nil {
 			WriteJSONErrorWithDetails(w, err.Status, err.Code, err.Message, err.SubCode, err.Details)
 		}

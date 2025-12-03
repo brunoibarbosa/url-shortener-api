@@ -25,12 +25,12 @@ func NewLogoutHTTPHandler(cmd *command.LogoutHandler) *LogoutHTTPHandler {
 	}
 }
 
-func (h *LogoutHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
+func (h *LogoutHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) *http_handler.HTTPError {
 	ctx := r.Context()
 
 	payload, validationErr := validateLogoutPayload(r, ctx)
 	if validationErr != nil {
-		return nil, validationErr
+		return validationErr
 	}
 
 	appCmd := command.LogoutCommand{
@@ -40,11 +40,11 @@ func (h *LogoutHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http
 	if handleErr != nil {
 		switch {
 		case err.Is(handleErr, sd.ErrInvalidRefreshToken):
-			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.session.invalid_refresh_token", nil)
+			return http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeBadRequest, "error.session.invalid_refresh_token", nil)
 		case err.Is(handleErr, sd.ErrTokenGenerate):
-			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.session.generate_refresh_token", nil)
+			return http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.session.generate_refresh_token", nil)
 		default:
-			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)
+			return http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)
 		}
 	}
 
@@ -59,7 +59,7 @@ func (h *LogoutHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http
 	})
 
 	w.WriteHeader(http.StatusOK)
-	return nil, nil
+	return nil
 }
 
 func validateLogoutPayload(r *http.Request, ctx context.Context) (LogoutPayload, *http_handler.HTTPError) {

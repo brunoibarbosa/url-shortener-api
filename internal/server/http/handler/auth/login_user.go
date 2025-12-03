@@ -36,12 +36,12 @@ func NewLoginUserHTTPHandler(cmd *command.LoginUserHandler, refreshTokenDuration
 	}
 }
 
-func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
+func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) *http_handler.HTTPError {
 	ctx := r.Context()
 
 	payload, validationErr := validateLoginUserPayload(r, ctx)
 	if validationErr != nil {
-		return nil, validationErr
+		return validationErr
 	}
 
 	appCmd := command.LoginUserCommand{
@@ -54,11 +54,11 @@ func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (h
 	if handleErr != nil {
 		switch {
 		case err.Is(handleErr, domain.ErrInvalidCredentials):
-			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.login.invalid_credentials", nil)
+			return http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.login.invalid_credentials", nil)
 		case err.Is(handleErr, domain.ErrSocialLoginOnly):
-			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.login.invalid_credentials", nil)
+			return http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, errors.CodeValidationError, "error.login.invalid_credentials", nil)
 		default:
-			return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.login.failed", nil)
+			return http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.login.failed", nil)
 		}
 	}
 
@@ -79,10 +79,10 @@ func (h *LoginUserHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (h
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if encodeErr := json.NewEncoder(w).Encode(response); encodeErr != nil {
-		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
+		return http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
 	}
 
-	return nil, nil
+	return nil
 }
 
 func validateLoginUserPayload(r *http.Request, ctx context.Context) (LoginUserPayload, *http_handler.HTTPError) {

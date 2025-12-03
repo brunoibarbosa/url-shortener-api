@@ -18,13 +18,13 @@ func NewRedirectGoogleHTTPHandler(cmd *command.RedirectGoogleHandler) *RedirectG
 	}
 }
 
-func (h *RedirectGoogleHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
+func (h *RedirectGoogleHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) *http_handler.HTTPError {
 	ctx := r.Context()
 	url, err := h.cmd.Handle(ctx)
 	if err != nil {
-		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.redirect.failed", nil)
+		return http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.redirect.failed", nil)
 	}
 
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-	return nil, nil
+	return nil
 }

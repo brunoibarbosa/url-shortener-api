@@ -45,12 +45,12 @@ func NewListSessionsHTTPHandler(qry query.ListSessionsHandler) *ListSessionsHTTP
 	}
 }
 
-func (h *ListSessionsHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) (http_handler.HandlerResponse, *http_handler.HTTPError) {
+func (h *ListSessionsHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) *http_handler.HTTPError {
 	ctx := r.Context()
 
 	payload, validationErr := validateListSessionsParams(r, ctx)
 	if validationErr != nil {
-		return nil, validationErr
+		return validationErr
 	}
 
 	params := query.ListSessionsParams{
@@ -63,7 +63,7 @@ func (h *ListSessionsHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	}
 	list, count, handleErr := h.qry.Handle(r.Context(), params)
 	if handleErr != nil {
-		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)
+		return http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.server.internal", nil)
 	}
 
 	sessions := make([]Session, len(list))
@@ -86,10 +86,10 @@ func (h *ListSessionsHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if encodeErr := json.NewEncoder(w).Encode(response); encodeErr != nil {
-		return nil, http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
+		return http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.common.encode_failed", nil)
 	}
 
-	return nil, nil
+	return nil
 }
 func validateListSessionsParams(r *http.Request, ctx context.Context) (ListSessionsParams, *http_handler.HTTPError) {
 	var params ListSessionsParams
