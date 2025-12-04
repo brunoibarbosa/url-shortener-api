@@ -1,3 +1,5 @@
 .env.development
 .env.production
 .env
+bin
+docs/openapi.bundled.yaml

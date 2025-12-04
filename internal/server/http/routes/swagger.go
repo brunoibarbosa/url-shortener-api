@@ -34,8 +34,6 @@ func NewSwaggerRoutes(r *http.AppRouter, config SwaggerRoutesConfig) {
 
 	r.Get("/docs/openapi.yaml", handler.ServeSpec)
 
-	r.HandleFunc("/docs/*", handler.ServeSpecFiles)
-
 	r.HandleFunc("/swagger/*", handler.Handler().ServeHTTP)
 	r.HandleFunc("/swagger", handler.Handler().ServeHTTP)
 }
