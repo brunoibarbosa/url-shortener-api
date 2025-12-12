@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
+	"github.com/brunoibarbosa/url-shortener/internal/app/url/query"
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler"
 	app_errors "github.com/brunoibarbosa/url-shortener/pkg/errors"
@@ -12,10 +12,10 @@ import (
 )
 
 type RedirectHTTPHandler struct {
-	cmd *command.GetOriginalURLHandler
+	cmd *query.GetOriginalURLHandler
 }
 
-func NewRedirectHTTPHandler(cmd *command.GetOriginalURLHandler) *RedirectHTTPHandler {
+func NewRedirectHTTPHandler(cmd *query.GetOriginalURLHandler) *RedirectHTTPHandler {
 	return &RedirectHTTPHandler{cmd: cmd}
 }
 
@@ -27,7 +27,7 @@ func (h *RedirectHTTPHandler) Handle(w http.ResponseWriter, r *http.Request) *ht
 		return http_handler.NewI18nHTTPError(ctx, http.StatusBadRequest, app_errors.CodeBadRequest, "error.url.expired_url", http_handler.Detail(ctx, "shortCode", "error.details.shortcode.expired"))
 	}
 
-	appQuery := command.GetOriginalURLQuery{ShortCode: shortCode}
+	appQuery := query.GetOriginalURLQuery{ShortCode: shortCode}
 	originalURL, err := h.cmd.Handle(r.Context(), appQuery)
 
 	if err != nil {

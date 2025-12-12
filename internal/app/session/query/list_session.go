@@ -2,34 +2,20 @@ package query
 
 import (
 	"context"
-	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/domain"
+	session_domain "github.com/brunoibarbosa/url-shortener/internal/domain/session"
 )
 
-type ListSessionsDTO struct {
-	UserAgent string
-	IPAddress string
-	CreatedAt time.Time
-	ExpiresAt time.Time
+type ListSessionsHandler struct {
+	repo session_domain.SessionQueryRepository
 }
 
-type ListSessionsSortBy uint8
-
-const (
-	ListSessionsSortByNone ListSessionsSortBy = iota
-	ListSessionsSortByUserAgent
-	ListSessionsSortByIPAddress
-	ListSessionsSortByCreatedAt
-	ListSessionsSortByExpiresAt
-)
-
-type ListSessionsParams struct {
-	SortBy     ListSessionsSortBy
-	SortKind   domain.SortKind
-	Pagination domain.Pagination
+func NewListSessionsHandler(repo session_domain.SessionQueryRepository) *ListSessionsHandler {
+	return &ListSessionsHandler{
+		repo: repo,
+	}
 }
 
-type ListSessionsHandler interface {
-	Handle(ctx context.Context, p ListSessionsParams) ([]ListSessionsDTO, uint64, error)
+func (h *ListSessionsHandler) Handle(ctx context.Context, params session_domain.ListSessionsParams) ([]session_domain.ListSessionsDTO, uint64, error) {
+	return h.repo.List(ctx, params)
 }

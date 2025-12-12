@@ -10,15 +10,16 @@ import (
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/session/query"
 	"github.com/brunoibarbosa/url-shortener/internal/domain"
+	session_domain "github.com/brunoibarbosa/url-shortener/internal/domain/session"
 	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 )
 
 type ListSessionsParams struct {
-	Limit    uint64                   `json:"limit"`
-	Page     uint64                   `json:"page"`
-	SortBy   query.ListSessionsSortBy `json:"sortBy"`
-	SortKind domain.SortKind          `json:"sortKind"`
+	Limit    uint64                            `json:"limit"`
+	Page     uint64                            `json:"page"`
+	SortBy   session_domain.ListSessionsSortBy `json:"sortBy"`
+	SortKind domain.SortKind                   `json:"sortKind"`
 }
 
 type Session = struct {
@@ -36,10 +37,10 @@ type ListSessions200Response struct {
 }
 
 type ListSessionsHTTPHandler struct {
-	qry query.ListSessionsHandler
+	qry *query.ListSessionsHandler
 }
 
-func NewListSessionsHTTPHandler(qry query.ListSessionsHandler) *ListSessionsHTTPHandler {
+func NewListSessionsHTTPHandler(qry *query.ListSessionsHandler) *ListSessionsHTTPHandler {
 	return &ListSessionsHTTPHandler{
 		qry,
 	}
@@ -53,7 +54,7 @@ func (h *ListSessionsHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 		return validationErr
 	}
 
-	params := query.ListSessionsParams{
+	params := session_domain.ListSessionsParams{
 		Pagination: domain.Pagination{
 			Number: payload.Page,
 			Size:   payload.Limit,
@@ -127,17 +128,17 @@ func validateListSessionsParams(r *http.Request, ctx context.Context) (ListSessi
 	// --------------------------------------------------
 
 	v = r.URL.Query().Get("sortBy")
-	var sortBy = query.ListSessionsSortByNone
+	var sortBy = session_domain.ListSessionsSortByNone
 	if v != "" {
 		switch strings.ToUpper(v) {
 		case "USERAGENT":
-			sortBy = query.ListSessionsSortByUserAgent
+			sortBy = session_domain.ListSessionsSortByUserAgent
 		case "IPADDRESS":
-			sortBy = query.ListSessionsSortByIPAddress
+			sortBy = session_domain.ListSessionsSortByIPAddress
 		case "CREATEDAT":
-			sortBy = query.ListSessionsSortByCreatedAt
+			sortBy = session_domain.ListSessionsSortByCreatedAt
 		case "EXPIRESAT":
-			sortBy = query.ListSessionsSortByExpiresAt
+			sortBy = session_domain.ListSessionsSortByExpiresAt
 		default:
 			ec.AddFieldError("sortBy", "error.details.parameter_invalid_sort")
 		}

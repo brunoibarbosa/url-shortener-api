@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brunoibarbosa/url-shortener/internal/app/session/query"
 	"github.com/brunoibarbosa/url-shortener/internal/domain"
+	session_domain "github.com/brunoibarbosa/url-shortener/internal/domain/session"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -19,13 +19,13 @@ func NewListSessionsRepository(pg *pgxpool.Pool) *ListSessionsRepository {
 	}
 }
 
-func (h *ListSessionsRepository) Handle(ctx context.Context, p query.ListSessionsParams) ([]query.ListSessionsDTO, uint64, error) {
-	pagination := h.getPagination(p)
-	sort := h.getOrderByField(p)
+func (r *ListSessionsRepository) List(ctx context.Context, p session_domain.ListSessionsParams) ([]session_domain.ListSessionsDTO, uint64, error) {
+	pagination := r.getPagination(p)
+	sort := r.getOrderByField(p)
 
 	var count uint64
 	if pagination != "" {
-		if err := h.db.QueryRow(ctx, `
+		if err := r.db.QueryRow(ctx, `
 			SELECT COUNT(s.id)
 			FROM sessions s
 			WHERE s.revoked_at IS NULL
@@ -35,7 +35,7 @@ func (h *ListSessionsRepository) Handle(ctx context.Context, p query.ListSession
 		}
 	}
 
-	rows, err := h.db.Query(ctx, `
+	rows, err := r.db.Query(ctx, `
 		SELECT
 			s.user_agent,
 			s.ip_address,
@@ -50,9 +50,9 @@ func (h *ListSessionsRepository) Handle(ctx context.Context, p query.ListSession
 		return nil, 0, err
 	}
 
-	sessions := []query.ListSessionsDTO{}
+	sessions := []session_domain.ListSessionsDTO{}
 	for rows.Next() {
-		var s query.ListSessionsDTO
+		var s session_domain.ListSessionsDTO
 		if err := rows.Scan(
 			&s.UserAgent,
 			&s.IPAddress,
@@ -72,16 +72,16 @@ func (h *ListSessionsRepository) Handle(ctx context.Context, p query.ListSession
 	return sessions, count, nil
 }
 
-func (*ListSessionsRepository) getOrderByField(p query.ListSessionsParams) string {
+func (*ListSessionsRepository) getOrderByField(p session_domain.ListSessionsParams) string {
 	sortBy := ""
 	switch p.SortBy {
-	case query.ListSessionsSortByUserAgent:
+	case session_domain.ListSessionsSortByUserAgent:
 		sortBy = "user_agent"
-	case query.ListSessionsSortByIPAddress:
+	case session_domain.ListSessionsSortByIPAddress:
 		sortBy = "ip_address"
-	case query.ListSessionsSortByCreatedAt:
+	case session_domain.ListSessionsSortByCreatedAt:
 		sortBy = "created_at"
-	case query.ListSessionsSortByExpiresAt:
+	case session_domain.ListSessionsSortByExpiresAt:
 		sortBy = "expires_at"
 	}
 
@@ -96,7 +96,7 @@ func (*ListSessionsRepository) getOrderByField(p query.ListSessionsParams) strin
 	return fmt.Sprintf(" ORDER BY %s %s", sortBy, sortKind)
 }
 
-func (*ListSessionsRepository) getPagination(p query.ListSessionsParams) string {
+func (*ListSessionsRepository) getPagination(p session_domain.ListSessionsParams) string {
 	if p.Pagination.Size <= 0 {
 		return ""
 	}

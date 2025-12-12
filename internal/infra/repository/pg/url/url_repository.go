@@ -2,7 +2,6 @@ package pg_repo
 
 import (
 	"context"
-	"time"
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
@@ -39,11 +38,6 @@ func (r *URLRepository) FindByShortCode(ctx context.Context, shortCode string) (
 	err := r.Q(ctx).QueryRow(ctx, "SELECT encrypted_url, expires_at FROM urls WHERE short_code = $1 LIMIT 1", shortCode).Scan(&u.EncryptedURL, &u.ExpiresAt)
 
 	if err != nil {
-		return nil, err
-	}
-
-	if u.ExpiresAt != nil && time.Now().UTC().After(u.ExpiresAt.UTC()) {
-		err := domain.ErrExpiredURL
 		return nil, err
 	}
 

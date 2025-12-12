@@ -1,4 +1,4 @@
-package command
+package query
 
 import (
 	"context"
@@ -39,6 +39,10 @@ func (h *GetOriginalURLHandler) Handle(ctx context.Context, query GetOriginalURL
 		return "", err
 	}
 	if cachedUrl != nil {
+		if err := cachedUrl.CanBeAccessed(time.Now().UTC()); err != nil {
+			return "", err
+		}
+
 		decryptedUrl, err := h.encrypter.Decrypt(cachedUrl.EncryptedURL)
 		if err != nil {
 			return "", err
@@ -54,6 +58,10 @@ func (h *GetOriginalURLHandler) Handle(ctx context.Context, query GetOriginalURL
 
 	if url == nil {
 		return "", domain.ErrURLNotFound
+	}
+
+	if err := url.CanBeAccessed(time.Now().UTC()); err != nil {
+		return "", err
 	}
 
 	cacheDuration := h.cacheExpirationDuration

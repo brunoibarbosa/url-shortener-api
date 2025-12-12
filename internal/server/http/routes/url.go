@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
+	"github.com/brunoibarbosa/url-shortener/internal/app/url/query"
 	pg_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg/url"
 	redis_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/redis/url"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/service/crypto"
@@ -40,7 +41,7 @@ func NewURLRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.Cl
 
 	// --------------------------------------------------
 
-	getHandler := command.NewGetOriginalURLHandler(
+	getHandler := query.NewGetOriginalURLHandler(
 		repo,
 		cache,
 		encrypter,

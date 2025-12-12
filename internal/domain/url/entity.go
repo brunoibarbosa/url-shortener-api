@@ -27,3 +27,17 @@ func (u *URL) RemainingTTL(now time.Time) time.Duration {
 	}
 	return u.ExpiresAt.Sub(now)
 }
+
+func (u *URL) IsExpired(now time.Time) bool {
+	if u.ExpiresAt == nil {
+		return false
+	}
+	return now.After(*u.ExpiresAt)
+}
+
+func (u *URL) CanBeAccessed(now time.Time) error {
+	if u.IsExpired(now) {
+		return ErrExpiredURL
+	}
+	return nil
+}
