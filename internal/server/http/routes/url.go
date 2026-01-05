@@ -3,8 +3,7 @@ package http_routes
 import (
 	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
-	"github.com/brunoibarbosa/url-shortener/internal/app/url/query"
+	"github.com/brunoibarbosa/url-shortener/internal/container"
 	pg_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg/url"
 	redis_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/redis/url"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/service/crypto"
@@ -22,34 +21,19 @@ type URLRoutesConfig struct {
 }
 
 func NewURLRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.Client, config URLRoutesConfig) {
-	repo := pg_repo.NewURLRepository(pgConn)
-	cache := redis_repo.NewURLCacheRepository(redisClient)
-	encrypter := crypto.NewURLEncrypter(config.URLSecret)
-	shortCodeGenerator := shortcode.NewRandomShortCodeGenerator()
+	deps := container.URLFactoryDependencies{
+		PersistRepo:               pg_repo.NewURLRepository(pgConn),
+		CacheRepo:                 redis_repo.NewURLCacheRepository(redisClient),
+		Encrypter:                 crypto.NewURLEncrypter(config.URLSecret),
+		ShortCodeGenerator:        shortcode.NewRandomShortCodeGenerator(),
+		PersistExpirationDuration: config.URLPersistExpirationDuration,
+		CacheExpirationDuration:   config.URLCacheExpirationDuration,
+	}
 
-	// --------------------------------------------------
+	f := container.NewURLHandlerFactory(deps)
 
-	createHandler := command.NewCreateShortURLHandler(
-		repo,
-		cache,
-		encrypter,
-		shortCodeGenerator,
-		config.URLPersistExpirationDuration,
-		config.URLCacheExpirationDuration,
-	)
-	createHTTPHandler := http_handler.NewCreateShortURLHTTPHandler(createHandler)
-
-	// --------------------------------------------------
-
-	getHandler := query.NewGetOriginalURLHandler(
-		repo,
-		cache,
-		encrypter,
-		config.URLCacheExpirationDuration,
-	)
-	redirectHTTPHandler := http_handler.NewRedirectHTTPHandler(getHandler)
-
-	// --------------------------------------------------
+	createHTTPHandler := http_handler.NewCreateShortURLHTTPHandler(f.CreateShortURLHandler())
+	redirectHTTPHandler := http_handler.NewRedirectHTTPHandler(f.GetOriginalURLHandler())
 
 	r.Post("/url/shorten", createHTTPHandler.Handle)
 	r.Get("/r/{shortCode}", redirectHTTPHandler.Handle)

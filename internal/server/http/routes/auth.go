@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brunoibarbosa/url-shortener/internal/app/auth/command"
+	"github.com/brunoibarbosa/url-shortener/internal/container"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
 	oauth_provider "github.com/brunoibarbosa/url-shortener/internal/infra/oauth"
 	pg_session_repo "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg/session"
@@ -29,86 +29,30 @@ type AuthRoutesConfig struct {
 }
 
 func NewAuthRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.Client, config AuthRoutesConfig) {
-	txManager := pg.NewTxManager(pgConn)
+	deps := container.AuthFactoryDependencies{
+		TxManager:            pg.NewTxManager(pgConn),
+		UserRepo:             pg_user_repo.NewUserRepository(pgConn),
+		ProviderRepo:         pg_user_repo.NewUserProviderRepository(pgConn),
+		ProfileRepo:          pg_user_repo.NewUserProfileRepository(pgConn),
+		SessionRepo:          pg_session_repo.NewSessionRepository(pgConn),
+		BlacklistRepo:        redis_session_repo.NewBlacklistRepository(redisClient),
+		StateService:         redis_session_repo.NewStateRepository(redisClient),
+		OAuthProvider:        oauth_provider.NewGoogleOAuth(config.GoogleID, config.GoogleSecret, fmt.Sprintf("http://%s", config.ListenAddress)),
+		TokenService:         jwt.NewTokenService(config.JWTSecret),
+		PasswordEncrypter:    crypto.NewUserPasswordEncrypter(bcrypt.DefaultCost),
+		SessionEncrypter:     crypto.NewSessionEncrypter(),
+		RefreshTokenDuration: config.RefreshTokenDuration,
+		AccessTokenDuration:  config.AccessTokenDuration,
+	}
 
-	userRepo := pg_user_repo.NewUserRepository(pgConn)
-	providerRepo := pg_user_repo.NewUserProviderRepository(pgConn)
-	profileRepo := pg_user_repo.NewUserProfileRepository(pgConn)
-	sessionRepo := pg_session_repo.NewSessionRepository(pgConn)
-	blacklistRepo := redis_session_repo.NewBlacklistRepository(redisClient)
-	stateRepo := redis_session_repo.NewStateRepository(redisClient)
+	f := container.NewAuthHandlerFactory(deps)
 
-	provider := oauth_provider.NewGoogleOAuth(config.GoogleID, config.GoogleSecret, fmt.Sprintf("http://%s", config.ListenAddress))
-	tokenService := jwt.NewTokenService(config.JWTSecret)
-	passwordEncrypter := crypto.NewUserPasswordEncrypter(bcrypt.DefaultCost)
-	sessionEncrypter := crypto.NewSessionEncrypter()
-
-	// --------------------------------------------------
-
-	registerHandler := command.NewRegisterUserHandler(
-		txManager,
-		userRepo,
-		providerRepo,
-		profileRepo,
-		passwordEncrypter,
-	)
-	registerHTTPHandler := http_handler.NewRegisterUserHTTPHandler(registerHandler)
-
-	// --------------------------------------------------
-
-	loginUserHandler := command.NewLoginUserHandler(
-		txManager,
-		providerRepo,
-		sessionRepo,
-		tokenService,
-		passwordEncrypter,
-		sessionEncrypter,
-		config.RefreshTokenDuration,
-		config.AccessTokenDuration,
-	)
-	loginUserHTTPHandler := http_handler.NewLoginUserHTTPHandler(loginUserHandler, config.RefreshTokenDuration)
-
-	// --------------------------------------------------
-
-	redirectGoogleHandler := command.NewRedirectGoogleHandler(provider, stateRepo)
-	redirectGoogleHTTPHandler := http_handler.NewRedirectGoogleHTTPHandler(redirectGoogleHandler)
-
-	// --------------------------------------------------
-
-	loginGoogleHandler := command.NewLoginGoogleHandler(
-		txManager,
-		provider,
-		userRepo,
-		providerRepo,
-		profileRepo,
-		sessionRepo,
-		tokenService,
-		sessionEncrypter,
-		stateRepo,
-		config.RefreshTokenDuration,
-		config.AccessTokenDuration,
-	)
-	loginGoogleHTTPHandler := http_handler.NewLoginGoogleHTTPHandler(loginGoogleHandler, config.RefreshTokenDuration)
-
-	// --------------------------------------------------
-
-	refreshTokenHandler := command.NewRefreshTokenHandler(
-		txManager,
-		sessionRepo,
-		blacklistRepo,
-		tokenService,
-		sessionEncrypter,
-		config.RefreshTokenDuration,
-		config.AccessTokenDuration,
-	)
-	refreshTokenHTTPHandler := http_handler.NewRefreshTokenHTTPHandler(refreshTokenHandler, config.RefreshTokenDuration)
-
-	// --------------------------------------------------
-
-	logoutHandler := command.NewLogoutHandler(sessionRepo, blacklistRepo, sessionEncrypter)
-	logoutHTTPHandler := http_handler.NewLogoutHTTPHandler(logoutHandler)
-
-	// --------------------------------------------------
+	registerHTTPHandler := http_handler.NewRegisterUserHTTPHandler(f.RegisterUserHandler())
+	loginUserHTTPHandler := http_handler.NewLoginUserHTTPHandler(f.LoginUserHandler(), f.RefreshTokenDuration())
+	redirectGoogleHTTPHandler := http_handler.NewRedirectGoogleHTTPHandler(f.RedirectGoogleHandler())
+	loginGoogleHTTPHandler := http_handler.NewLoginGoogleHTTPHandler(f.LoginGoogleHandler(), f.RefreshTokenDuration())
+	refreshTokenHTTPHandler := http_handler.NewRefreshTokenHTTPHandler(f.RefreshTokenHandler(), f.RefreshTokenDuration())
+	logoutHTTPHandler := http_handler.NewLogoutHTTPHandler(f.LogoutHandler())
 
 	r.Post("/auth/register", registerHTTPHandler.Handle)
 	r.Post("/auth/login", loginUserHTTPHandler.Handle)
