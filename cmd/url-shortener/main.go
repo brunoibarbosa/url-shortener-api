@@ -47,6 +47,7 @@ func main() {
 		http_middleware.RecoverMiddleware,
 	)
 	http_routes.NewURLRoutes(router, postgres.Pool, redisClient, http_routes.URLRoutesConfig{
+		JWTSecret:                    cfg.Env.JWTSecret,
 		URLSecret:                    cfg.Env.URLSecret,
 		URLPersistExpirationDuration: cfg.Env.URLPersistExpirationDuration,
 		URLCacheExpirationDuration:   cfg.Env.URLCacheExpirationDuration,

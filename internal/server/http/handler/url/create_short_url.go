@@ -10,8 +10,10 @@ import (
 	"github.com/brunoibarbosa/url-shortener/internal/app/url/command"
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler"
+	http_middleware "github.com/brunoibarbosa/url-shortener/internal/server/http/middleware"
 	"github.com/brunoibarbosa/url-shortener/internal/validation"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
+	"github.com/google/uuid"
 )
 
 type CreateShortURLPayload struct {
@@ -40,7 +42,14 @@ func (h *CreateShortURLHTTPHandler) Handle(w http.ResponseWriter, r *http.Reques
 		return err
 	}
 
-	appCmd := command.CreateShortURLCommand{OriginalURL: payload.URL, Length: 6, MaxRetries: 10}
+	userID := extractUserIDFromContext(r)
+
+	appCmd := command.CreateShortURLCommand{
+		OriginalURL: payload.URL,
+		UserID:      userID,
+		Length:      6,
+		MaxRetries:  10,
+	}
 	url, handleErr := h.cmd.Handle(r.Context(), appCmd)
 	if handleErr != nil {
 		return http_handler.NewI18nHTTPError(ctx, http.StatusInternalServerError, errors.CodeInternalError, "error.url.create_failed", nil)
@@ -95,4 +104,11 @@ func validateShortenPayload(r *http.Request, ctx context.Context) (CreateShortUR
 	}
 
 	return payload, nil
+}
+
+func extractUserIDFromContext(r *http.Request) *uuid.UUID {
+	if userID, ok := r.Context().Value(http_middleware.UserIDKey).(uuid.UUID); ok {
+		return &userID
+	}
+	return nil
 }

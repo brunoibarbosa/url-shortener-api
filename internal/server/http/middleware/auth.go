@@ -8,11 +8,15 @@ import (
 	http_handler "github.com/brunoibarbosa/url-shortener/internal/server/http/handler"
 	"github.com/brunoibarbosa/url-shortener/pkg/errors"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type contextKey string
 
-const SessionIDKey contextKey = "sessionID"
+const (
+	SessionIDKey contextKey = "sessionID"
+	UserIDKey    contextKey = "userID"
+)
 
 type AuthMiddleware struct {
 	Secret []byte
@@ -67,6 +71,13 @@ func (m *AuthMiddleware) Handler(next http.Handler) http.Handler {
 		}
 
 		ctx := context.WithValue(r.Context(), SessionIDKey, sid)
+
+		if sub, ok := claims["sub"].(string); ok && sub != "" {
+			if userID, err := uuid.Parse(sub); err == nil {
+				ctx = context.WithValue(ctx, UserIDKey, userID)
+			}
+		}
+
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

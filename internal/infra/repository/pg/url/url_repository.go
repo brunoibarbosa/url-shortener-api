@@ -25,7 +25,7 @@ func (r *URLRepository) Exists(ctx context.Context, shortCode string) (bool, err
 }
 
 func (r *URLRepository) Save(ctx context.Context, u *domain.URL) error {
-	_, err := r.Q(ctx).Exec(ctx, "INSERT INTO urls (short_code, encrypted_url, expires_at) VALUES ($1, $2, $3)", u.ShortCode, u.EncryptedURL, u.ExpiresAt.UTC())
+	_, err := r.Q(ctx).Exec(ctx, "INSERT INTO urls (short_code, encrypted_url, user_id, expires_at) VALUES ($1, $2, $3, $4)", u.ShortCode, u.EncryptedURL, u.UserID, u.ExpiresAt.UTC())
 	return err
 }
 
@@ -33,9 +33,10 @@ func (r *URLRepository) FindByShortCode(ctx context.Context, shortCode string) (
 	u := domain.URL{
 		ShortCode:    shortCode,
 		EncryptedURL: "",
+		UserID:       nil,
 		ExpiresAt:    nil,
 	}
-	err := r.Q(ctx).QueryRow(ctx, "SELECT encrypted_url, expires_at FROM urls WHERE short_code = $1 LIMIT 1", shortCode).Scan(&u.EncryptedURL, &u.ExpiresAt)
+	err := r.Q(ctx).QueryRow(ctx, "SELECT encrypted_url, user_id, expires_at FROM urls WHERE short_code = $1 LIMIT 1", shortCode).Scan(&u.EncryptedURL, &u.UserID, &u.ExpiresAt)
 
 	if err != nil {
 		return nil, err

@@ -3,6 +3,8 @@ package url
 import (
 	"errors"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -18,6 +20,7 @@ var (
 type URL struct {
 	ShortCode    string
 	EncryptedURL string
+	UserID       *uuid.UUID
 	ExpiresAt    *time.Time
 }
 

@@ -5,12 +5,14 @@ import (
 	"time"
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
+	"github.com/google/uuid"
 
 	"github.com/brunoibarbosa/url-shortener/pkg/util"
 )
 
 type CreateShortURLCommand struct {
 	OriginalURL string
+	UserID      *uuid.UUID
 	Length      int
 	MaxRetries  int
 }
@@ -78,6 +80,7 @@ func (h *CreateShortURLHandler) Handle(ctx context.Context, cmd CreateShortURLCo
 		u := &domain.URL{
 			ShortCode:    shortCode,
 			EncryptedURL: encryptedUrl,
+			UserID:       cmd.UserID,
 			ExpiresAt:    &expiresAt,
 		}
 
