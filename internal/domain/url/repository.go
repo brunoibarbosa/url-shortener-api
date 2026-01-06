@@ -12,6 +12,7 @@ type URLRepository interface {
 	Save(ctx context.Context, url *URL) error
 	Exists(ctx context.Context, shortCode string) (bool, error)
 	FindByShortCode(ctx context.Context, shortCode string) (*URL, error)
+	SoftDelete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
 	DeleteExpiredURLs(ctx context.Context) (int64, error)
 }
 
@@ -27,9 +28,11 @@ type URLQueryRepository interface {
 }
 
 type ListURLsDTO struct {
+	ID        uuid.UUID
 	ShortCode string
 	ExpiresAt *time.Time
 	CreatedAt time.Time
+	DeletedAt *time.Time
 }
 
 type ListURLsSortBy uint8

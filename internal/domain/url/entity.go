@@ -22,6 +22,7 @@ type URL struct {
 	EncryptedURL string
 	UserID       *uuid.UUID
 	ExpiresAt    *time.Time
+	DeletedAt    *time.Time
 }
 
 func (u *URL) RemainingTTL(now time.Time) time.Duration {

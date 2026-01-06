@@ -18,6 +18,7 @@ type URLHandlerFactory struct {
 	cacheExpirationDuration   time.Duration
 
 	createHandler *command.CreateShortURLHandler
+	deleteHandler *command.DeleteURLHandler
 	getHandler    *query.GetOriginalURLHandler
 	listHandler   *query.ListUserURLsHandler
 }
@@ -75,4 +76,11 @@ func (f *URLHandlerFactory) ListUserURLsHandler() *query.ListUserURLsHandler {
 		f.listHandler = query.NewListUserURLsHandler(f.queryRepo)
 	}
 	return f.listHandler
+}
+
+func (f *URLHandlerFactory) DeleteURLHandler() *command.DeleteURLHandler {
+	if f.deleteHandler == nil {
+		f.deleteHandler = command.NewDeleteURLHandler(f.persistRepo)
+	}
+	return f.deleteHandler
 }

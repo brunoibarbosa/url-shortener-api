@@ -19,6 +19,8 @@ var (
 	ErrPasswordMissingSymbol = errors.New("password must contain at least one special character")
 	ErrCreatingUser          = errors.New("error creating user")
 	ErrNotFound              = errors.New("user not found")
+	ErrUserNotAuthenticated  = errors.New("user not authenticated")
+	ErrInvalidUserIDContext  = errors.New("invalid user ID in context")
 )
 
 type User struct {

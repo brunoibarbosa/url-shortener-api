@@ -25,9 +25,11 @@ type ListUserURLsParams struct {
 }
 
 type URLItem struct {
+	ID        uuid.UUID  `json:"id"`
 	ShortCode string     `json:"shortCode"`
 	ExpiresAt *time.Time `json:"expiresAt"`
 	CreatedAt time.Time  `json:"createdAt"`
+	DeletedAt *time.Time `json:"deletedAt"`
 }
 
 type ListUserURLs200Response struct {
@@ -75,9 +77,11 @@ func (h *ListUserURLsHTTPHandler) Handle(w http.ResponseWriter, r *http.Request)
 	urls := make([]URLItem, len(list))
 	for i, dto := range list {
 		urls[i] = URLItem{
+			ID:        dto.ID,
 			ShortCode: dto.ShortCode,
 			ExpiresAt: dto.ExpiresAt,
 			CreatedAt: dto.CreatedAt,
+			DeletedAt: dto.DeletedAt,
 		}
 	}
 

@@ -6,6 +6,7 @@ import (
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/url"
 	"github.com/brunoibarbosa/url-shortener/internal/infra/database/pg"
 	base "github.com/brunoibarbosa/url-shortener/internal/infra/repository/pg/base"
+	"github.com/google/uuid"
 )
 
 type URLRepository struct {
@@ -35,14 +36,21 @@ func (r *URLRepository) FindByShortCode(ctx context.Context, shortCode string) (
 		EncryptedURL: "",
 		UserID:       nil,
 		ExpiresAt:    nil,
+		DeletedAt:    nil,
 	}
-	err := r.Q(ctx).QueryRow(ctx, "SELECT encrypted_url, user_id, expires_at FROM urls WHERE short_code = $1 LIMIT 1", shortCode).Scan(&u.EncryptedURL, &u.UserID, &u.ExpiresAt)
+	err := r.Q(ctx).QueryRow(ctx, "SELECT encrypted_url, user_id, expires_at, deleted_at FROM urls WHERE short_code = $1 AND deleted_at IS NULL LIMIT 1", shortCode).Scan(&u.EncryptedURL, &u.UserID, &u.ExpiresAt, &u.DeletedAt)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &u, nil
+}
+
+func (r *URLRepository) SoftDelete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {
+	query := `UPDATE urls SET deleted_at = now() WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL`
+	_, err := r.Q(ctx).Exec(ctx, query, id, userID)
+	return err
 }
 
 func (r *URLRepository) DeleteExpiredURLs(ctx context.Context) (int64, error) {

@@ -41,6 +41,7 @@ func NewURLRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.Cl
 	createHTTPHandler := http_handler.NewCreateShortURLHTTPHandler(f.CreateShortURLHandler())
 	redirectHTTPHandler := http_handler.NewRedirectHTTPHandler(f.GetOriginalURLHandler())
 	listUserURLsHTTPHandler := http_handler.NewListUserURLsHTTPHandler(f.ListUserURLsHandler())
+	deleteURLHTTPHandler := http_handler.NewDeleteURLHTTPHandler(f.DeleteURLHandler())
 
 	r.Group(func(r *http.AppRouter) {
 		r.Use(optionalAuth.Handler)
@@ -51,5 +52,6 @@ func NewURLRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.Cl
 	r.Group(func(r *http.AppRouter) {
 		r.Use(authMiddleware.Handler)
 		r.Get("/user/urls", listUserURLsHTTPHandler.Handle)
+		r.Delete("/user/urls/{id}", deleteURLHTTPHandler.Handle)
 	})
 }

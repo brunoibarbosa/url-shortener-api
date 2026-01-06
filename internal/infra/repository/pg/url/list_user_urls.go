@@ -39,7 +39,7 @@ func (r *ListUserURLsRepository) ListByUserID(ctx context.Context, userID uuid.U
 	}
 
 	rows, err := r.Q(ctx).Query(ctx, `
-		SELECT short_code, expires_at, created_at
+		SELECT id, short_code, expires_at, created_at, deleted_at
 		FROM urls
 		WHERE user_id = $1
 		`+sort+
@@ -54,9 +54,11 @@ func (r *ListUserURLsRepository) ListByUserID(ctx context.Context, userID uuid.U
 	for rows.Next() {
 		var u url_domain.ListURLsDTO
 		if err := rows.Scan(
+			&u.ID,
 			&u.ShortCode,
 			&u.ExpiresAt,
 			&u.CreatedAt,
+			&u.DeletedAt,
 		); err != nil {
 			return nil, 0, err
 		}
