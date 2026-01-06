@@ -11,6 +11,7 @@ import (
 type URLHandlerFactory struct {
 	persistRepo               domain.URLRepository
 	cacheRepo                 domain.URLCacheRepository
+	queryRepo                 domain.URLQueryRepository
 	encrypter                 domain.URLEncrypter
 	shortCodeGenerator        domain.ShortCodeGenerator
 	persistExpirationDuration time.Duration
@@ -18,11 +19,13 @@ type URLHandlerFactory struct {
 
 	createHandler *command.CreateShortURLHandler
 	getHandler    *query.GetOriginalURLHandler
+	listHandler   *query.ListUserURLsHandler
 }
 
 type URLFactoryDependencies struct {
 	PersistRepo               domain.URLRepository
 	CacheRepo                 domain.URLCacheRepository
+	QueryRepo                 domain.URLQueryRepository
 	Encrypter                 domain.URLEncrypter
 	ShortCodeGenerator        domain.ShortCodeGenerator
 	PersistExpirationDuration time.Duration
@@ -33,6 +36,7 @@ func NewURLHandlerFactory(deps URLFactoryDependencies) *URLHandlerFactory {
 	return &URLHandlerFactory{
 		persistRepo:               deps.PersistRepo,
 		cacheRepo:                 deps.CacheRepo,
+		queryRepo:                 deps.QueryRepo,
 		encrypter:                 deps.Encrypter,
 		shortCodeGenerator:        deps.ShortCodeGenerator,
 		persistExpirationDuration: deps.PersistExpirationDuration,
@@ -64,4 +68,11 @@ func (f *URLHandlerFactory) GetOriginalURLHandler() *query.GetOriginalURLHandler
 		)
 	}
 	return f.getHandler
+}
+
+func (f *URLHandlerFactory) ListUserURLsHandler() *query.ListUserURLsHandler {
+	if f.listHandler == nil {
+		f.listHandler = query.NewListUserURLsHandler(f.queryRepo)
+	}
+	return f.listHandler
 }

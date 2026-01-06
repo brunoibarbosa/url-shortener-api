@@ -24,10 +24,12 @@ type URLRoutesConfig struct {
 
 func NewURLRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.Client, config URLRoutesConfig) {
 	optionalAuth := http_middleware.NewOptionalAuthMiddleware(config.JWTSecret)
+	authMiddleware := http_middleware.NewAuthMiddleware(config.JWTSecret)
 
 	deps := container.URLFactoryDependencies{
 		PersistRepo:               pg_repo.NewURLRepository(pgConn),
 		CacheRepo:                 redis_repo.NewURLCacheRepository(redisClient),
+		QueryRepo:                 pg_repo.NewListUserURLsRepository(pgConn),
 		Encrypter:                 crypto.NewURLEncrypter(config.URLSecret),
 		ShortCodeGenerator:        shortcode.NewRandomShortCodeGenerator(),
 		PersistExpirationDuration: config.URLPersistExpirationDuration,
@@ -38,10 +40,16 @@ func NewURLRoutes(r *http.AppRouter, pgConn *pgxpool.Pool, redisClient *redis.Cl
 
 	createHTTPHandler := http_handler.NewCreateShortURLHTTPHandler(f.CreateShortURLHandler())
 	redirectHTTPHandler := http_handler.NewRedirectHTTPHandler(f.GetOriginalURLHandler())
+	listUserURLsHTTPHandler := http_handler.NewListUserURLsHTTPHandler(f.ListUserURLsHandler())
 
 	r.Group(func(r *http.AppRouter) {
 		r.Use(optionalAuth.Handler)
 		r.Post("/url/shorten", createHTTPHandler.Handle)
 	})
 	r.Get("/r/{shortCode}", redirectHTTPHandler.Handle)
+
+	r.Group(func(r *http.AppRouter) {
+		r.Use(authMiddleware.Handler)
+		r.Get("/user/urls", listUserURLsHTTPHandler.Handle)
+	})
 }
