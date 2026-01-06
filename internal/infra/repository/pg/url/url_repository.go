@@ -52,14 +52,3 @@ func (r *URLRepository) SoftDelete(ctx context.Context, id uuid.UUID, userID uui
 	_, err := r.Q(ctx).Exec(ctx, query, id, userID)
 	return err
 }
-
-func (r *URLRepository) DeleteExpiredURLs(ctx context.Context) (int64, error) {
-	query := `DELETE FROM urls WHERE expires_at IS NOT NULL AND expires_at < now()`
-	result, err := r.Q(ctx).Exec(ctx, query)
-	if err != nil {
-		return 0, err
-	}
-
-	rows := result.RowsAffected()
-	return rows, nil
-}

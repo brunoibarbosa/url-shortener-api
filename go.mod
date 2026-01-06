@@ -8,7 +8,6 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/nicksnyder/go-i18n/v2 v2.6.0
 	github.com/redis/go-redis/v9 v9.10.0
-	github.com/robfig/cron/v3 v3.0.0
 	github.com/swaggo/http-swagger/v2 v2.0.2
 	golang.org/x/crypto v0.37.0
 	golang.org/x/text v0.24.0

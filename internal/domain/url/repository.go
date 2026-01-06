@@ -13,7 +13,6 @@ type URLRepository interface {
 	Exists(ctx context.Context, shortCode string) (bool, error)
 	FindByShortCode(ctx context.Context, shortCode string) (*URL, error)
 	SoftDelete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
-	DeleteExpiredURLs(ctx context.Context) (int64, error)
 }
 
 type URLCacheRepository interface {
