@@ -12,7 +12,7 @@ type URLRepository interface {
 	Save(ctx context.Context, url *URL) error
 	Exists(ctx context.Context, shortCode string) (bool, error)
 	FindByShortCode(ctx context.Context, shortCode string) (*URL, error)
-	SoftDelete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
+	SoftDelete(ctx context.Context, id uuid.UUID, userID uuid.UUID) (string, error)
 }
 
 type URLCacheRepository interface {

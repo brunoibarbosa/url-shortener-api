@@ -47,8 +47,9 @@ func (r *URLRepository) FindByShortCode(ctx context.Context, shortCode string) (
 	return &u, nil
 }
 
-func (r *URLRepository) SoftDelete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {
-	query := `UPDATE urls SET deleted_at = now() WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL`
-	_, err := r.Q(ctx).Exec(ctx, query, id, userID)
-	return err
+func (r *URLRepository) SoftDelete(ctx context.Context, id uuid.UUID, userID uuid.UUID) (string, error) {
+	var shortCode string
+	query := `UPDATE urls SET deleted_at = now() WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL RETURNING short_code`
+	err := r.Q(ctx).QueryRow(ctx, query, id, userID).Scan(&shortCode)
+	return shortCode, err
 }

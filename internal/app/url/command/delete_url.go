@@ -13,15 +13,24 @@ type DeleteURLCommand struct {
 }
 
 type DeleteURLHandler struct {
-	repo domain.URLRepository
+	repo      domain.URLRepository
+	cacheRepo domain.URLCacheRepository
 }
 
-func NewDeleteURLHandler(repo domain.URLRepository) *DeleteURLHandler {
+func NewDeleteURLHandler(repo domain.URLRepository, cacheRepo domain.URLCacheRepository) *DeleteURLHandler {
 	return &DeleteURLHandler{
-		repo: repo,
+		repo:      repo,
+		cacheRepo: cacheRepo,
 	}
 }
 
 func (h *DeleteURLHandler) Handle(ctx context.Context, cmd DeleteURLCommand) error {
-	return h.repo.SoftDelete(ctx, cmd.ID, cmd.UserID)
+	shortCode, err := h.repo.SoftDelete(ctx, cmd.ID, cmd.UserID)
+	if err != nil {
+		return err
+	}
+
+	_ = h.cacheRepo.Delete(ctx, shortCode)
+
+	return nil
 }

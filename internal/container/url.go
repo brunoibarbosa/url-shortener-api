@@ -80,7 +80,7 @@ func (f *URLHandlerFactory) ListUserURLsHandler() *query.ListUserURLsHandler {
 
 func (f *URLHandlerFactory) DeleteURLHandler() *command.DeleteURLHandler {
 	if f.deleteHandler == nil {
-		f.deleteHandler = command.NewDeleteURLHandler(f.persistRepo)
+		f.deleteHandler = command.NewDeleteURLHandler(f.persistRepo, f.cacheRepo)
 	}
 	return f.deleteHandler
 }
