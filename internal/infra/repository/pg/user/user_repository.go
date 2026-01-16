@@ -2,6 +2,7 @@ package pg_repo
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	domain "github.com/brunoibarbosa/url-shortener/internal/domain/user"
@@ -29,7 +30,9 @@ func (r *UserRepository) Exists(ctx context.Context, email string) (bool, error)
 
 func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	var u = domain.User{}
-	var pf = domain.UserProfile{}
+	var profileID sql.NullInt64
+	var profileName sql.NullString
+	var profileAvatarURL sql.NullString
 
 	err := r.Q(ctx).QueryRow(ctx, `
 		SELECT 
@@ -43,7 +46,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Use
 		FROM users u
         LEFT JOIN user_profiles p ON p.user_id = u.id
 		WHERE u.id=$1
-	`, id).Scan(&u.ID, &u.Email, &u.CreatedAt, &u.UpdatedAt, &pf.ID, &pf.Name, &pf.AvatarURL)
+	`, id).Scan(&u.ID, &u.Email, &u.CreatedAt, &u.UpdatedAt, &profileID, &profileName, &profileAvatarURL)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -52,8 +55,14 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Use
 		return nil, err
 	}
 
-	if pf.ID != 0 {
-		u.Profile = &pf
+	if profileID.Valid {
+		u.Profile = &domain.UserProfile{
+			ID:   profileID.Int64,
+			Name: profileName.String,
+		}
+		if profileAvatarURL.Valid {
+			u.Profile.AvatarURL = &profileAvatarURL.String
+		}
 	}
 
 	return &u, err
@@ -61,7 +70,9 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Use
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var u = domain.User{}
-	var pf = domain.UserProfile{}
+	var profileID sql.NullInt64
+	var profileName sql.NullString
+	var profileAvatarURL sql.NullString
 
 	err := r.Q(ctx).QueryRow(ctx, `
 		SELECT 
@@ -75,7 +86,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 		FROM users u
         LEFT JOIN user_profiles p ON p.user_id = u.id
 		WHERE email=$1
-	`, email).Scan(&u.ID, &u.Email, &u.CreatedAt, &u.UpdatedAt, &pf.ID, &pf.Name, &pf.AvatarURL)
+	`, email).Scan(&u.ID, &u.Email, &u.CreatedAt, &u.UpdatedAt, &profileID, &profileName, &profileAvatarURL)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -84,8 +95,14 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 		return nil, err
 	}
 
-	if pf.ID != 0 {
-		u.Profile = &pf
+	if profileID.Valid {
+		u.Profile = &domain.UserProfile{
+			ID:   profileID.Int64,
+			Name: profileName.String,
+		}
+		if profileAvatarURL.Valid {
+			u.Profile.AvatarURL = &profileAvatarURL.String
+		}
 	}
 
 	return &u, err

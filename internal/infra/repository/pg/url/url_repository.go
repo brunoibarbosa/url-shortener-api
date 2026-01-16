@@ -26,7 +26,11 @@ func (r *URLRepository) Exists(ctx context.Context, shortCode string) (bool, err
 }
 
 func (r *URLRepository) Save(ctx context.Context, u *domain.URL) error {
-	_, err := r.Q(ctx).Exec(ctx, "INSERT INTO urls (short_code, encrypted_url, user_id, expires_at) VALUES ($1, $2, $3, $4)", u.ShortCode, u.EncryptedURL, u.UserID, u.ExpiresAt.UTC())
+	var expiresAt interface{}
+	if u.ExpiresAt != nil {
+		expiresAt = u.ExpiresAt.UTC()
+	}
+	_, err := r.Q(ctx).Exec(ctx, "INSERT INTO urls (short_code, encrypted_url, user_id, expires_at) VALUES ($1, $2, $3, $4)", u.ShortCode, u.EncryptedURL, u.UserID, expiresAt)
 	return err
 }
 

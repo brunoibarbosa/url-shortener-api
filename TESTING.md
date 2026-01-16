@@ -1,249 +1,210 @@
-# Testing Strategy
+# Testing Guide
 
-Este documento descreve a estratégia de testes do projeto URL Shortener API.
+Este documento explica a estratégia de testes do projeto e como executá-los.
 
-## Visão Geral
+## Índice
 
-O projeto utiliza uma abordagem de testes em camadas, focando em cobertura de código nas áreas críticas do domínio e comandos.
+- [Estratégia de Testes](#estratégia-de-testes)
+- [Comandos Disponíveis](#comandos-disponíveis)
+- [Tipos de Testes](#tipos-de-testes)
+- [Workflow Recomendado](#workflow-recomendado)
+- [CI/CD](#cicd)
+- [Estrutura dos Testes](#estrutura-dos-testes)
 
-### Stack de Testes
+---
 
-- **Testing Framework**: Go testing nativo
-- **Assertions**: `github.com/stretchr/testify/assert`
-- **Mocks**: `go.uber.org/mock/gomock` (mockgen)
+## Estratégia de Testes
 
-## Estrutura de Testes
+Os testes estão organizados em **camadas** para otimizar velocidade e feedback:
 
-### 1. Domain Tests (Entidades de Domínio)
+### Fast Tests (Testes Rápidos)
 
-**Localização**: `internal/domain/*/entity_test.go`
+- **Domain**: Lógica de negócio pura
+- **Application**: Casos de uso e comandos
+- **Services**: Serviços de infraestrutura (crypto, jwt, shortcode)
+- **Sem Docker**: Rodam localmente sem dependências externas
+- **Uso**: Pre-commit hooks, desenvolvimento diário
 
-Testa a lógica de negócio das entidades de domínio.
+### Integration Tests (Testes de Integração)
 
-**Exemplo**:
+- **Redis Repositories**: Cache e sessões
+- **PostgreSQL Repositories**: Session, URL, User
+- **Com Docker**: Requer testcontainers
+- **Uso**: Antes de push, validação manual, CI/CD
 
-```go
-func TestURL_CanBeAccessed(t *testing.T) {
-    t.Run("should return error when URL is deleted", func(t *testing.T) {
-        deletedAt := time.Now()
-        u := &domain.URL{DeletedAt: &deletedAt}
+### Property-Based Tests (Testes Baseados em Propriedades)
 
-        err := u.CanBeAccessed()
+- **Validação de invariantes**: Testa propriedades que devem sempre ser verdadeiras
+- **Geração de dados aleatórios**: Executa centenas de cenários automaticamente
+- **Uso**: Encontrar edge cases que testes manuais não cobrem
 
-        assert.Error(t, err)
-        assert.Equal(t, domain.ErrDeletedURL, err)
-    })
-}
-```
+### Edge Case Tests (Testes de Casos Limites)
 
-### 2. Command Tests (Application Layer)
+- **Valores extremos**: Strings vazias, máximos, mínimos
+- **Caracteres especiais**: Unicode, SQL injection, XSS
+- **Condições de erro**: Duplicatas, não existentes, operações inválidas
+- **Uso**: Garantir robustez em cenários adversos
 
-**Localização**: `internal/app/*/command/*_test.go`
+### E2E Tests (Testes End-to-End)
 
-Testa os command handlers com mocks das dependências.
+- **Fluxos completos**: Registro → Login → Criar URL → Redirecionar
+- **HTTP Layer**: Testa handlers, middleware, serialização
+- **Uso**: Validar integração completa da API
 
-**Cenários Testados**:
+### All Tests (Todos os Testes)
 
-**URL Commands:**
+- Executa `test-fast` + `test-integration` em sequência
+- **Uso**: CI/CD, validação final antes de merge
 
-- ✅ Sucesso (happy path)
-- ✅ Colisão e retry
-- ✅ Erros de geração
-- ✅ Erros de criptografia
-- ✅ Erros de persistência
-- ✅ Falha de cache
-- ✅ Validação de ownership
+---
 
-**Auth Commands:**
+## Comandos Disponíveis
 
-- ✅ Login: sucesso, credenciais inválidas, usuário não encontrado, senha errada
-- ✅ Registro: sucesso, email duplicado, erro de hash, erro de transação
-- ✅ Logout: sucesso, token inválido, sessão expirada, erro de revoke, retry de blacklist
-- ✅ Refresh Token: sucesso, token vazio, sessão não encontrada, sessão expirada, token revogado, erro de transação
+### `make test` ou `make test-fast`
 
-**Exemplo**:
-
-```go
-func TestCreateShortURLHandler_Handle_Success(t *testing.T) {
-    ctrl := gomock.NewController(t)
-    defer ctrl.Finish()
-
-    mockRepo := mocks.NewMockURLRepository(ctrl)
-    mockCache := mocks.NewMockURLCacheRepository(ctrl)
-    mockEncrypter := mocks.NewMockURLEncrypter(ctrl)
-    mockGenerator := mocks.NewMockShortCodeGenerator(ctrl)
-
-    mockGenerator.EXPECT().Generate(6).Return("abc123", nil)
-    mockCache.EXPECT().Exists(ctx, "abc123").Return(false, nil)
-    mockRepo.EXPECT().Exists(ctx, "abc123").Return(false, nil)
-    mockEncrypter.EXPECT().Encrypt(originalURL).Return("encrypted", nil)
-    mockRepo.EXPECT().Save(ctx, gomock.Any()).Return(nil)
-    mockCache.EXPECT().Save(ctx, gomock.Any(), gomock.Any()).Return(nil)
-
-    handler := command.NewCreateShortURLHandler(mockRepo, mockCache, mockEncrypter, mockGenerator, 24*time.Hour, 1*time.Hour)
-
-    result, err := handler.Handle(ctx, cmd)
-
-    assert.NoError(t, err)
-    assert.Equal(t, "abc123", result.ShortCode)
-}
-```
-
-## Gerando Mocks
-
-Os mocks são gerados automaticamente usando `mockgen` a partir das interfaces de domínio.
-
-### Gerar todos os mocks:
-
-```bash
-make mocks
-```
-
-### Gerar mock individual:
-
-```bash
-mockgen -source=internal/domain/url/repository.go -destination=internal/mocks/url_repository_mock.go -package=mocks
-```
-
-### Mocks Gerados:
-
-- `internal/mocks/url_repository_mock.go` - MockURLRepository, MockURLCacheRepository, MockURLQueryRepository
-- `internal/mocks/url_encrypter_mock.go` - MockURLEncrypter
-- `internal/mocks/shortcode_generator_mock.go` - MockShortCodeGenerator
-- `internal/mocks/user_repository_mock.go` - MockUserRepository, MockUserProviderRepository, MockUserProfileRepository
-- `internal/mocks/user_encrypter_mock.go` - MockUserPasswordEncrypter
-- `internal/mocks/session_repository_mock.go` - MockSessionRepository, MockBlacklistRepository
-- `internal/mocks/session_encrypter_mock.go` - MockSessionEncrypter
-- `internal/mocks/token_service_mock.go` - MockTokenService
-- `internal/mocks/tx_manager_mock.go` - MockTransactionManager
-
-## Executando Testes
-
-### Todos os testes:
+**Testes rápidos (sem Docker)**
 
 ```bash
 make test
+# ou
+make test-fast
 ```
 
-### Testes específicos:
+**Quando usar:**
+
+- Durante desenvolvimento (feedback rápido)
+- Pre-commit hooks
+- Validação de mudanças simples
+- Quando Docker não está disponível
+
+---
+
+### `make test-integration`
+
+**Testes de integração (requer Docker)**
 
 ```bash
-go test ./internal/app/url/command/... -v
-go test ./internal/app/auth/command/... -v
-go test ./internal/domain/url/... -v
+make test-integration
 ```
 
-### Com cobertura:
+**Quando usar:**
+
+- Antes de fazer push
+- Validação de mudanças em repositories
+- Testes de infraestrutura
+- Validação completa de integração
+
+**Requisitos:**
+
+- Docker Desktop rodando
+- Testcontainers funcionando
+
+---
+
+### `make test-property`
+
+**Testes baseados em propriedades (requer Docker)**
 
 ```bash
-go test ./... -cover
-go test ./internal/app/url/command/... -cover
+make test-property
 ```
 
-### Testes com detalhes de cobertura:
+**O que testa:**
+
+- Invariantes de negócio (CreatedAt <= UpdatedAt)
+- Unicidade de constraints (email, short_code)
+- Idempotência de operações (soft delete)
+- Geração de 100-300 cenários aleatórios por teste
+
+**Quando usar:**
+
+- Validar robustez de repositories
+- Encontrar bugs em edge cases
+- Antes de releases importantes
+
+---
+
+### `make test-edge`
+
+**Testes de casos limites (requer Docker)**
 
 ```bash
-go test ./internal/app/url/command/... -coverprofile=coverage.out
-go tool cover -html=coverage.out
+make test-edge
 ```
 
-## Boas Práticas
+**O que testa:**
 
-### 1. Nomenclatura de Testes
+- Strings muito longas (URLs de 2048 chars)
+- Strings muito curtas (emails mínimos)
+- Caracteres especiais e Unicode
+- Operações duplicadas e não existentes
+- SQL injection e XSS attempts
 
-Use nomes descritivos no formato:
+**Quando usar:**
 
-```go
-func Test<Handler>_<Method>_<Scenario>(t *testing.T)
-```
+- Validar segurança
+- Garantir compatibilidade com dados reais
+- Antes de deploy em produção
 
-Exemplos:
+---
 
-- `TestCreateShortURLHandler_Handle_Success`
-- `TestCreateShortURLHandler_Handle_CollisionRetry`
-- `TestDeleteURLHandler_Handle_WrongOwner`
+### `make test-e2e`
 
-### 2. Estrutura AAA (Arrange-Act-Assert)
-
-Organize testes em três seções claras:
-
-```go
-func TestExample(t *testing.T) {
-    // Arrange
-    ctrl := gomock.NewController(t)
-    defer ctrl.Finish()
-
-    mockRepo := mocks.NewMockURLRepository(ctrl)
-    mockRepo.EXPECT().Save(gomock.Any()).Return(nil)
-
-    // Act
-    result, err := handler.Handle(ctx, cmd)
-
-    // Assert
-    assert.NoError(t, err)
-    assert.Equal(t, expected, result)
-}
-```
-
-### 3. Uso de gomock
-
-#### Expectativas Básicas:
-
-```go
-mock.EXPECT().Method(arg1, arg2).Return(result, nil)
-```
-
-#### Matchers:
-
-```go
-mock.EXPECT().Save(gomock.Any()).Return(nil) // qualquer argumento
-mock.EXPECT().Save(ctx, gomock.Any()).Return(nil) // ctx específico, segundo arg qualquer
-```
-
-#### Ordem de Chamadas:
-
-```go
-gomock.InOrder(
-    mock.EXPECT().First().Return(nil),
-    mock.EXPECT().Second().Return(nil),
-)
-```
-
-#### Múltiplas Chamadas:
-
-```go
-mock.EXPECT().Method().Return(nil).Times(2)
-mock.EXPECT().Method().Return(nil).AnyTimes()
-```
-
-### 4. Isolamento de Testes
-
-- Cada teste deve ser independente
-- Use `t.Run()` para subtests quando apropriado
-- Evite state compartilhado entre testes
-
-### 5. Cobertura de Código
-
-Execute os seguintes comandos para verificar a cobertura:
+**Testes end-to-end (requer Docker)**
 
 ```bash
-# Todos os testes com cobertura
-go test ./... -cover
-
-# Cobertura detalhada do domínio
-go test ./internal/domain/... -cover
-
-# Cobertura detalhada dos comandos
-go test ./internal/app/.../command/... -cover
-
-# Relatório HTML de cobertura
-go test ./... -coverprofile=coverage.out
-go tool cover -html=coverage.out
+make test-e2e
 ```
 
-## Recursos
+**O que testa:**
 
-- [Go Testing Best Practices](https://go.dev/doc/tutorial/add-a-test)
-- [gomock Documentation](https://github.com/uber-go/mock)
-- [testify Documentation](https://github.com/stretchr/testify)
-- [Table Driven Tests](https://dave.cheney.net/2019/05/07/prefer-table-driven-tests)
+- Fluxo completo de registro e login
+- Criação e redirecionamento de URLs encurtadas
+- Gerenciamento de sessões (list, refresh, logout)
+- Tratamento de erros HTTP
+
+**Quando usar:**
+
+- Validar integração de todos os componentes
+- Antes de releases
+- Smoke tests em staging
+
+---
+
+### `make test-all`
+
+**Suite completa de testes**
+
+```bash
+make test-all
+```
+
+**Quando usar:**
+
+- Validação final antes de PR
+- CI/CD pipelines
+- Release builds
+- Validação completa de qualidade
+
+---
+
+## Tipos de Testes
+
+### `make coverage`
+
+**Relatório de cobertura HTML**
+
+```bash
+make coverage
+```
+
+**Quando usar:**
+
+- Análise de cobertura de código
+- Identificar áreas não testadas
+- Documentação de qualidade
+
+**Gera:**
+
+- `coverage.out` - Dados de cobertura
+- `coverage.html` - Relatório visual (abrir no browser)

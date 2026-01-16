@@ -83,40 +83,7 @@ make migrate-up
 
 ---
 
-## 🧪 Testes
-
-### Executar todos os testes:
-
-```bash
-make test
-```
-
-### Executar testes específicos:
-
-```bash
-go test ./internal/app/url/command/... -v
-go test ./internal/domain/url/... -v
-```
-
-### Cobertura de código:
-
-```bash
-go test ./... -cover
-go test ./internal/app/url/command/... -coverprofile=coverage.out
-go tool cover -html=coverage.out
-```
-
-### Gerar mocks:
-
-```bash
-make mocks
-```
-
-**📖 Para mais detalhes sobre estratégia de testes, consulte [TESTING.md](TESTING.md)**
-
----
-
-## �🗄️ Configuração do Redis
+## 6. Configuração do Redis
 
 ```bash
 maxmemory-policy volatile-lfu

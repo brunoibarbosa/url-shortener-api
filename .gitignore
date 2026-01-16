@@ -3,3 +3,5 @@
 .env
 bin
 docs/openapi.bundled.yaml
+coverage.html
+coverage.out
