@@ -226,3 +226,16 @@ func TestURL_Delete(t *testing.T) {
 		assert.True(t, url.IsDeleted())
 	})
 }
+
+func TestURL_Errors(t *testing.T) {
+	t.Run("should have all error constants defined", func(t *testing.T) {
+		assert.Equal(t, "expired URL", domain.ErrExpiredURL.Error())
+		assert.Equal(t, "deleted URL", domain.ErrDeletedURL.Error())
+		assert.Equal(t, "URL not found", domain.ErrURLNotFound.Error())
+		assert.Equal(t, "invalid url", domain.ErrInvalidURLFormat.Error())
+		assert.Equal(t, "url is missing scheme (e.g., http or https)", domain.ErrMissingURLSchema.Error())
+		assert.Equal(t, "unsupported scheme", domain.ErrUnsupportedURLSchema.Error())
+		assert.Equal(t, "url is missing host", domain.ErrMissingURLHost.Error())
+		assert.Equal(t, "invalid short code", domain.ErrInvalidShortCode.Error())
+	})
+}

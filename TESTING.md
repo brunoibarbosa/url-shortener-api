@@ -20,12 +20,6 @@ O projeto utiliza uma abordagem de testes em camadas, focando em cobertura de c�
 
 Testa a lógica de negócio das entidades de domínio.
 
-**Cobertura Atual**:
-
-- ✅ `internal/domain/url/entity_test.go` - 100% de cobertura
-- ✅ `internal/domain/user/entity_test.go` - Testes de User, UserProfile, UserProvider
-- ✅ `internal/domain/session/entity_test.go` - Testes de Session.IsExpired()
-
 **Exemplo**:
 
 ```go
@@ -47,17 +41,6 @@ func TestURL_CanBeAccessed(t *testing.T) {
 **Localização**: `internal/app/*/command/*_test.go`
 
 Testa os command handlers com mocks das dependências.
-
-**Cobertura Atual**:
-
-- ✅ `internal/app/url/command/create_short_url_test.go` - 5 cenários de teste
-- ✅ `internal/app/url/command/delete_url_test.go` - 4 cenários de teste
-- ✅ `internal/app/auth/command/login_user_test.go` - 4 cenários de teste
-- ✅ `internal/app/auth/command/register_user_test.go` - 4 cenários de teste
-- ✅ `internal/app/auth/command/logout_test.go` - 6 cenários de teste
-- ✅ `internal/app/auth/command/refresh_token_test.go` - 7 cenários de teste
-- **URL Commands Coverage**: 86.1%
-- **Auth Commands Coverage**: 58.3%
 
 **Cenários Testados**:
 
@@ -241,13 +224,22 @@ mock.EXPECT().Method().Return(nil).AnyTimes()
 
 ### 5. Cobertura de Código
 
-Alvos de cobertura:
+Execute os seguintes comandos para verificar a cobertura:
 
-- **Domain Layer**: 100% (lógica crítica de negócio)
-- **Command Layer - URL**: 86.1%
-- **Command Layer - Auth**: 58.3%
-- **Query Layer**: >80% (objetivo)
-- **Handlers HTTP**: >70% (objetivo)
+```bash
+# Todos os testes com cobertura
+go test ./... -cover
+
+# Cobertura detalhada do domínio
+go test ./internal/domain/... -cover
+
+# Cobertura detalhada dos comandos
+go test ./internal/app/.../command/... -cover
+
+# Relatório HTML de cobertura
+go test ./... -coverprofile=coverage.out
+go tool cover -html=coverage.out
+```
 
 ## Recursos
 

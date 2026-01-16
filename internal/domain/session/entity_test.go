@@ -134,3 +134,144 @@ func TestSession_Revoked(t *testing.T) {
 		assert.False(t, session.IsExpired())
 	})
 }
+
+func TestSession_IsActive(t *testing.T) {
+	t.Run("should return true for active non-expired session", func(t *testing.T) {
+		expiresAt := time.Now().Add(24 * time.Hour)
+		session := &domain.Session{
+			ID:               uuid.New(),
+			UserID:           uuid.New(),
+			RefreshTokenHash: "hash123",
+			ExpiresAt:        &expiresAt,
+			RevokedAt:        nil,
+		}
+
+		isActive := !session.IsExpired()
+
+		assert.True(t, isActive)
+	})
+
+	t.Run("should return false for expired session", func(t *testing.T) {
+		expiresAt := time.Now().Add(-1 * time.Hour)
+		session := &domain.Session{
+			ID:               uuid.New(),
+			UserID:           uuid.New(),
+			RefreshTokenHash: "hash123",
+			ExpiresAt:        &expiresAt,
+			RevokedAt:        nil,
+		}
+
+		isActive := !session.IsExpired()
+
+		assert.False(t, isActive)
+	})
+
+	t.Run("should return false for revoked session", func(t *testing.T) {
+		expiresAt := time.Now().Add(24 * time.Hour)
+		revokedAt := time.Now()
+		session := &domain.Session{
+			ID:               uuid.New(),
+			UserID:           uuid.New(),
+			RefreshTokenHash: "hash123",
+			ExpiresAt:        &expiresAt,
+			RevokedAt:        &revokedAt,
+		}
+
+		isActive := !session.IsExpired()
+
+		assert.False(t, isActive)
+	})
+}
+
+func TestSession_RemainingTime(t *testing.T) {
+	t.Run("should calculate remaining time correctly", func(t *testing.T) {
+		expiresAt := time.Now().Add(2 * time.Hour)
+		session := &domain.Session{
+			ID:               uuid.New(),
+			UserID:           uuid.New(),
+			RefreshTokenHash: "hash123",
+			ExpiresAt:        &expiresAt,
+			RevokedAt:        nil,
+		}
+
+		remaining := time.Until(*session.ExpiresAt)
+
+		assert.True(t, remaining > 0)
+		assert.True(t, remaining <= 2*time.Hour)
+	})
+
+	t.Run("should return negative time for expired session", func(t *testing.T) {
+		expiresAt := time.Now().Add(-1 * time.Hour)
+		session := &domain.Session{
+			ID:               uuid.New(),
+			UserID:           uuid.New(),
+			RefreshTokenHash: "hash123",
+			ExpiresAt:        &expiresAt,
+			RevokedAt:        nil,
+		}
+
+		remaining := time.Until(*session.ExpiresAt)
+
+		assert.True(t, remaining < 0)
+	})
+}
+
+func TestSession_Lifecycle(t *testing.T) {
+	t.Run("should transition from active to revoked", func(t *testing.T) {
+		expiresAt := time.Now().Add(24 * time.Hour)
+		session := &domain.Session{
+			ID:               uuid.New(),
+			UserID:           uuid.New(),
+			RefreshTokenHash: "hash123",
+			ExpiresAt:        &expiresAt,
+			RevokedAt:        nil,
+		}
+
+		assert.False(t, session.IsExpired())
+		assert.Nil(t, session.RevokedAt)
+
+		revokedAt := time.Now()
+		session.RevokedAt = &revokedAt
+
+		assert.True(t, session.IsExpired())
+		assert.NotNil(t, session.RevokedAt)
+	})
+}
+
+func TestSession_WithDifferentDevices(t *testing.T) {
+	t.Run("should store different user agents and IPs", func(t *testing.T) {
+		expiresAt := time.Now().Add(24 * time.Hour)
+		userID := uuid.New()
+
+		session1 := &domain.Session{
+			ID:               uuid.New(),
+			UserID:           userID,
+			RefreshTokenHash: "hash123",
+			UserAgent:        "Mozilla/5.0",
+			IPAddress:        "192.168.1.1",
+			ExpiresAt:        &expiresAt,
+		}
+
+		session2 := &domain.Session{
+			ID:               uuid.New(),
+			UserID:           userID,
+			RefreshTokenHash: "hash456",
+			UserAgent:        "Chrome Mobile",
+			IPAddress:        "192.168.1.2",
+			ExpiresAt:        &expiresAt,
+		}
+
+		assert.NotEqual(t, session1.UserAgent, session2.UserAgent)
+		assert.NotEqual(t, session1.IPAddress, session2.IPAddress)
+		assert.Equal(t, session1.UserID, session2.UserID)
+	})
+}
+
+func TestSession_Errors(t *testing.T) {
+	t.Run("should have all error constants defined", func(t *testing.T) {
+		assert.Equal(t, "session not found", domain.ErrNotFound.Error())
+		assert.Equal(t, "invalid or expired refresh token", domain.ErrInvalidRefreshToken.Error())
+		assert.Equal(t, "failed to revoke token", domain.ErrRevokeFailed.Error())
+		assert.Equal(t, "invalid OAuth code", domain.ErrInvalidOAuthCode.Error())
+	})
+}
