@@ -24,6 +24,13 @@ mocks:
 	@mockgen -source=internal/domain/url/repository.go -destination=internal/mocks/url_repository_mock.go -package=mocks
 	@mockgen -source=internal/domain/url/encrypter.go -destination=internal/mocks/url_encrypter_mock.go -package=mocks
 	@mockgen -source=internal/domain/url/shortcode.go -destination=internal/mocks/shortcode_generator_mock.go -package=mocks
+	@mockgen -source=internal/domain/user/repository.go -destination=internal/mocks/user_repository_mock.go -package=mocks
+	@mockgen -source=internal/domain/user/encrypter.go -destination=internal/mocks/user_encrypter_mock.go -package=mocks
+	@mockgen -source=internal/domain/session/repository.go -destination=internal/mocks/session_repository_mock.go -package=mocks
+	@mockgen -source=internal/domain/session/encrypter.go -destination=internal/mocks/session_encrypter_mock.go -package=mocks
+	@mockgen -source=internal/domain/session/service.go -destination=internal/mocks/token_service_mock.go -package=mocks
+	@mockgen -source=internal/domain/session/state.go -destination=internal/mocks/state_service_mock.go -package=mocks
+	@mockgen -source=internal/domain/bd/tx_manager.go -destination=internal/mocks/tx_manager_mock.go -package=mocks
 	@echo "Mocks generated successfully!"
 
 test:

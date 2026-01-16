@@ -52,9 +52,16 @@ Testa os command handlers com mocks das dependências.
 
 - ✅ `internal/app/url/command/create_short_url_test.go` - 5 cenários de teste
 - ✅ `internal/app/url/command/delete_url_test.go` - 4 cenários de teste
-- **Coverage**: 86.1%
+- ✅ `internal/app/auth/command/login_user_test.go` - 4 cenários de teste
+- ✅ `internal/app/auth/command/register_user_test.go` - 4 cenários de teste
+- ✅ `internal/app/auth/command/logout_test.go` - 6 cenários de teste
+- ✅ `internal/app/auth/command/refresh_token_test.go` - 7 cenários de teste
+- **URL Commands Coverage**: 86.1%
+- **Auth Commands Coverage**: 58.3%
 
 **Cenários Testados**:
+
+**URL Commands:**
 
 - ✅ Sucesso (happy path)
 - ✅ Colisão e retry
@@ -63,6 +70,13 @@ Testa os command handlers com mocks das dependências.
 - ✅ Erros de persistência
 - ✅ Falha de cache
 - ✅ Validação de ownership
+
+**Auth Commands:**
+
+- ✅ Login: sucesso, credenciais inválidas, usuário não encontrado, senha errada
+- ✅ Registro: sucesso, email duplicado, erro de hash, erro de transação
+- ✅ Logout: sucesso, token inválido, sessão expirada, erro de revoke, retry de blacklist
+- ✅ Refresh Token: sucesso, token vazio, sessão não encontrada, sessão expirada, token revogado, erro de transação
 
 **Exemplo**:
 
@@ -113,6 +127,12 @@ mockgen -source=internal/domain/url/repository.go -destination=internal/mocks/ur
 - `internal/mocks/url_repository_mock.go` - MockURLRepository, MockURLCacheRepository, MockURLQueryRepository
 - `internal/mocks/url_encrypter_mock.go` - MockURLEncrypter
 - `internal/mocks/shortcode_generator_mock.go` - MockShortCodeGenerator
+- `internal/mocks/user_repository_mock.go` - MockUserRepository, MockUserProviderRepository, MockUserProfileRepository
+- `internal/mocks/user_encrypter_mock.go` - MockUserPasswordEncrypter
+- `internal/mocks/session_repository_mock.go` - MockSessionRepository, MockBlacklistRepository
+- `internal/mocks/session_encrypter_mock.go` - MockSessionEncrypter
+- `internal/mocks/token_service_mock.go` - MockTokenService
+- `internal/mocks/tx_manager_mock.go` - MockTransactionManager
 
 ## Executando Testes
 
@@ -126,6 +146,7 @@ make test
 
 ```bash
 go test ./internal/app/url/command/... -v
+go test ./internal/app/auth/command/... -v
 go test ./internal/domain/url/... -v
 ```
 
@@ -222,50 +243,11 @@ mock.EXPECT().Method().Return(nil).AnyTimes()
 
 Alvos de cobertura:
 
-- **Domain Layer**
-- **Command Layer**
-- **Query Layer**
-- **Handlers HTTP**
-
-## Próximos Passos
-
-### Testes Pendentes
-
-1. **Query Handlers**
-
-   - [ ] `GetOriginalURL` (redirect)
-   - [ ] `ListURLs` (paginação e filtros)
-
-2. **Auth Commands**
-
-   - [ ] `LoginUser`
-   - [ ] `RegisterUser`
-   - [ ] `RefreshToken`
-   - [ ] OAuth flows
-
-3. **Session Commands**
-
-   - [ ] `ListSessions`
-   - [ ] `RevokeSession`
-
-4. **Services**
-
-   - [ ] JWT Token Service
-   - [ ] Password Encrypter
-   - [ ] Session Encrypter
-
-5. **Integration Tests**
-   - [ ] Database repositories (usando testcontainers)
-   - [ ] Redis cache
-   - [ ] HTTP endpoints completos
-
-### Melhorias Futuras
-
-1. **Test Fixtures**: Criar builders para objetos de domínio complexos
-2. **Table-Driven Tests**: Converter testes com múltiplos cenários similares
-3. **Benchmarks**: Adicionar testes de performance para operações críticas
-4. **Contract Tests**: Validar contratos de API com ferramentas como Pact
-5. **E2E Tests**: Testes end-to-end com Docker Compose
+- **Domain Layer**: 100% (lógica crítica de negócio)
+- **Command Layer - URL**: 86.1%
+- **Command Layer - Auth**: 58.3%
+- **Query Layer**: >80% (objetivo)
+- **Handlers HTTP**: >70% (objetivo)
 
 ## Recursos
 
