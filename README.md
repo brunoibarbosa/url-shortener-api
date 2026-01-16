@@ -25,13 +25,34 @@ Um encurtador de URLs simples, rápido e escalável, desenvolvido em **Golang 1.
 
 ## ⚙️ Funcionalidades principais
 
-- Criar URLs encurtadas.
-- Redirecionamento rápido de URLs.
+### Autenticação e Autorização
+
+- Registro e login de usuários (email/senha).
+- Autenticação OAuth 2.0 com Google.
+- Sistema de tokens JWT (access token + refresh token).
+- Gerenciamento de sessões ativas por usuário.
+- Logout e revogação de tokens.
+
+### Encurtamento de URLs
+
+- Criação de URLs encurtadas com códigos personalizados ou automáticos.
+- Redirecionamento rápido e eficiente.
+- Associação de URLs a usuários autenticados (opcional).
+- URLs com tempo de expiração configurável.
+- Soft delete de URLs (remoção lógica).
+
+### Performance e Escalabilidade
+
 - Cache inteligente com Redis usando **LFU eviction policy**.
-- Expiração automática de URLs utilizando cronjob.
-- Suporte a mensagens de erro localizadas via i18n.
-- Prevenção de colisões nos códigos encurtados.
-- API RESTful.
+- Prevenção de colisões nos códigos encurtados com verificação no banco.
+- Geração de shortcodes com alta entropia.
+
+### Recursos Adicionais
+
+- API RESTful documentada com OpenAPI/Swagger.
+- Suporte multilíngue (Português e Inglês) via i18n.
+- Criptografia de URLs sensíveis.
+- Containerização com Docker e Docker Compose.
 
 ---
 
