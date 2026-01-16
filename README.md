@@ -35,7 +35,89 @@ Um encurtador de URLs simples, rápido e escalável, desenvolvido em **Golang 1.
 
 ---
 
-## 🗄️ Configuração do Redis
+## � Setup para Desenvolvimento
+
+### 1. Clone o repositório
+
+```bash
+git clone <repository-url>
+cd url-shortener-api
+```
+
+### 2. Configure as variáveis de ambiente
+
+```bash
+cp cmd/url-shortener/.env.example cmd/url-shortener/.env
+# Edite o arquivo .env com suas configurações
+```
+
+### 3. Configure os Git Hooks (recomendado)
+
+```bash
+make setup-hooks
+```
+
+**O que isso faz:**
+
+- ✅ Executa `make test` automaticamente antes de cada commit
+- ✅ Bloqueia commits se os testes falharem
+- ✅ Garante qualidade do código no repositório
+
+**Bypass (emergências apenas):**
+
+```bash
+git commit --no-verify -m "hotfix: mensagem"
+```
+
+### 4. Instale as dependências
+
+```bash
+go mod download
+```
+
+### 5. Execute as migrations
+
+```bash
+make migrate-up
+```
+
+---
+
+## 🧪 Testes
+
+### Executar todos os testes:
+
+```bash
+make test
+```
+
+### Executar testes específicos:
+
+```bash
+go test ./internal/app/url/command/... -v
+go test ./internal/domain/url/... -v
+```
+
+### Cobertura de código:
+
+```bash
+go test ./... -cover
+go test ./internal/app/url/command/... -coverprofile=coverage.out
+go tool cover -html=coverage.out
+```
+
+### Gerar mocks:
+
+```bash
+make mocks
+```
+
+**📖 Para mais detalhes sobre estratégia de testes, consulte [TESTING.md](TESTING.md)**
+
+---
+
+## �🗄️ Configuração do Redis
 
 ```bash
 maxmemory-policy volatile-lfu
+```
